@@ -69,6 +69,8 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-5, sub_max
     alpha_W, alpha_H = 1.0, 1.0
 
     for iter = 1:max_iter
+        print("$iter ")
+
         W_old = copy(W); H_old = copy(H)
 
         W, iW, alpha_W = projected_gradient_lin_W(X, H, W; alpha_init=alpha_W, tol=sub_tol, max_iter=sub_max_iter)

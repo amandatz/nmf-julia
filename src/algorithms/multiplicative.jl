@@ -7,6 +7,8 @@ function nmf_multiplicative(X, r, W_init, H_init; max_iter=MAX_ITER_FIXED, tol=T
 
     t_start = time()
     for iter = 1:max_iter
+        print("$iter ")
+        
         W_old = copy(W); H_old = copy(H)
 
         H .= H .* ((W' * X) ./ max.(W' * W * H, 1e-8))

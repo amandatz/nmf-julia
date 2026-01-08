@@ -48,6 +48,8 @@ function nmf_gradient_projected(X, r, W_init, H_init; max_iter=MAX_ITER_FIXED, t
     total_sub = 0
 
     for iter = 1:max_iter
+        print("$iter ")
+        
         W_old = copy(W); H_old = copy(H)
 
         W, iW = projected_gradient_W(X, H, W; tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, alpha_rule_W=alpha_rule_W)

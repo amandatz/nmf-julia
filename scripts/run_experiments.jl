@@ -1,14 +1,14 @@
-# scripts/run_experiments.jl
 using Pkg; Pkg.activate(".") # Ativa o ambiente da pasta atual
 using LinearAlgebra
 using Statistics
 using Printf
+using Random
 
-# Carrega seu código fonte
-include("../src/NMFProject.jl")
+includet("../src/NMFProject.jl")
 using .NMFProject
 
-# Definição dos modelos para o loop
+Random.seed!(123)
+
 models = Dict{Symbol, Function}(
     :multiplicativo => nmf_multiplicative,
     :lin => nmf_lin_algorithm,
@@ -32,7 +32,7 @@ models = Dict{Symbol, Function}(
 
 # Configuração dos Testes
 num_trials = 5
-dims = [100, 200]
+dims = [100, 200, 1000]
 r_val = 10
 type_val = :uniform
 
@@ -46,26 +46,23 @@ for n in dims
     stats_time = Dict(k => [] for k in keys(models))
 
     for trial in 1:num_trials
-        print("Trial $trial... ")
-        # Gera dados frescos para cada trial
+        # print("Trial $trial... ")
+        
         X = generate_matrix(n, n; type=type_val)
         m, n_ = size(X)
         W_init = rand(m, r_val)
         H_init = rand(r_val, n_)
 
         for (name, model) in models
-            # Roda o modelo
             _, _, errs, t, _ = model(X, r_val, W_init, H_init)
             
-            # Salva estatísticas
             push!(stats_err[name], isempty(errs) ? NaN : errs[end])
             push!(stats_time[name], t)
         end
         println("OK.")
     end
 
-    # Reportar Médias
-    println("\n--- Resultados Médios (n=$n) ---")
+    # println("\n--- Resultados Médios (n=$n) ---")
     for name in keys(models)
         avg_err = mean(stats_err[name])
         avg_time = mean(stats_time[name])
