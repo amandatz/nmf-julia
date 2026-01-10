@@ -1,0 +1,19 @@
+RELATÓRIO DE EXECUÇÃO: lin
+-----------------------------------
+ERRO: Teste 2 (Real: 1) -> Predito: 24
+ERRO: Teste 41 (Real: 14) -> Predito: 28
+ERRO: Teste 46 (Real: 16) -> Predito: 1
+ERRO: Teste 54 (Real: 18) -> Predito: 40
+ERRO: Teste 59 (Real: 20) -> Predito: 38
+ERRO: Teste 60 (Real: 20) -> Predito: 38
+ERRO: Teste 76 (Real: 26) -> Predito: 28
+ERRO: Teste 83 (Real: 28) -> Predito: 26
+ERRO: Teste 94 (Real: 32) -> Predito: 15
+ERRO: Teste 98 (Real: 33) -> Predito: 30
+ERRO: Teste 113 (Real: 38) -> Predito: 30
+ERRO: Teste 120 (Real: 40) -> Predito: 5
+
+===================================
+TOTAL: 108 acertos em 120 testes.
+ACURÁCIA: 90.0%
+TEMPO DE TREINO: 2052.154s

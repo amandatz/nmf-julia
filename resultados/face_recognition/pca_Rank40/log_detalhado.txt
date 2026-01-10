@@ -1,0 +1,11 @@
+RELATÓRIO DE EXECUÇÃO: pca
+-----------------------------------
+ERRO: Teste 57 (Real: 19) -> Predito: 36
+ERRO: Teste 59 (Real: 20) -> Predito: 30
+ERRO: Teste 83 (Real: 28) -> Predito: 37
+ERRO: Teste 120 (Real: 40) -> Predito: 5
+
+===================================
+TOTAL: 116 acertos em 120 testes.
+ACURÁCIA: 96.67%
+TEMPO DE TREINO: 1.12s

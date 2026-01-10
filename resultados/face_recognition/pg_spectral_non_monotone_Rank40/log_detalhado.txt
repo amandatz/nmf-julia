@@ -1,0 +1,33 @@
+RELATÓRIO DE EXECUÇÃO: pg_spectral_non_monotone
+-----------------------------------
+ERRO: Teste 1 (Real: 1) -> Predito: 29
+ERRO: Teste 2 (Real: 1) -> Predito: 24
+ERRO: Teste 6 (Real: 2) -> Predito: 32
+ERRO: Teste 14 (Real: 5) -> Predito: 25
+ERRO: Teste 26 (Real: 9) -> Predito: 25
+ERRO: Teste 32 (Real: 11) -> Predito: 22
+ERRO: Teste 38 (Real: 13) -> Predito: 3
+ERRO: Teste 40 (Real: 14) -> Predito: 22
+ERRO: Teste 41 (Real: 14) -> Predito: 22
+ERRO: Teste 44 (Real: 15) -> Predito: 22
+ERRO: Teste 46 (Real: 16) -> Predito: 1
+ERRO: Teste 47 (Real: 16) -> Predito: 3
+ERRO: Teste 48 (Real: 16) -> Predito: 29
+ERRO: Teste 50 (Real: 17) -> Predito: 23
+ERRO: Teste 53 (Real: 18) -> Predito: 15
+ERRO: Teste 57 (Real: 19) -> Predito: 22
+ERRO: Teste 59 (Real: 20) -> Predito: 30
+ERRO: Teste 76 (Real: 26) -> Predito: 3
+ERRO: Teste 79 (Real: 27) -> Predito: 38
+ERRO: Teste 82 (Real: 28) -> Predito: 22
+ERRO: Teste 83 (Real: 28) -> Predito: 37
+ERRO: Teste 84 (Real: 28) -> Predito: 22
+ERRO: Teste 91 (Real: 31) -> Predito: 21
+ERRO: Teste 113 (Real: 38) -> Predito: 30
+ERRO: Teste 118 (Real: 40) -> Predito: 3
+ERRO: Teste 120 (Real: 40) -> Predito: 5
+
+===================================
+TOTAL: 94 acertos em 120 testes.
+ACURÁCIA: 78.33%
+TEMPO DE TREINO: 6121.897s
