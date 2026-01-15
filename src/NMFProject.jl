@@ -14,7 +14,6 @@ export generate_matrix, generate_X_WH
 export make_rule_spectral_W, make_rule_spectral_H
 export nmf_multiplicative, nmf_lin_algorithm, nmf_gradient_projected
 export nmf_pca_wrapper
-# export nmf_pg_async # Se for usar o paralelo
 
 include("utils.jl")
 include("step_rules.jl")
@@ -22,6 +21,5 @@ include("algorithms/multiplicative.jl")
 include("algorithms/lin.jl")
 include("algorithms/spectral.jl")
 include("algorithms/pca.jl")
-# include("algorithms/parallel.jl")
 
 end

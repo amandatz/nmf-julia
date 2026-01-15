@@ -1,3 +1,7 @@
+# ==========================================================
+# Subproblemas (W e H)
+# ==========================================================
+
 function projected_gradient_W(X, H, W0; alpha_init=1e-3, lambda=0.0, tol=1e-6, max_iter=1000, monotone=true, alpha_rule_W=(args...)->args[5])
     W = copy(W0)
     alpha = alpha_init
@@ -38,9 +42,21 @@ function projected_gradient_H(X, W, H0; alpha_init=1e-3, lambda=0.0, tol=1e-6, m
     return H, max_iter
 end
 
-function nmf_gradient_projected(X, r, W_init, H_init; max_iter=MAX_ITER_FIXED, tol=TOL_FIXED, 
-                                sub_tol=TOL_FIXED_SUB, sub_max_iter=MAX_ITER_FIXED, 
-                                monotone=true, alpha_rule_W=(args...)->args[5], alpha_rule_H=(args...)->args[5], kwargs...)
+# ==========================================================
+# Função Principal
+# ==========================================================
+
+function nmf_gradient_projected(X, r, W_init, H_init; 
+                                max_iter=MAX_ITER_FIXED, 
+                                tol=TOL_FIXED, 
+                                sub_tol=TOL_FIXED_SUB, 
+                                sub_max_iter=MAX_ITER_FIXED, 
+                                monotone=true, 
+                                alpha_rule_W=(args...)->args[5], 
+                                alpha_rule_H=(args...)->args[5],
+                                alpha_init=1e-3,
+                                lambda=0.0,
+                                kwargs...)
     
     W = copy(W_init); H = copy(H_init)
     errors = Float64[]
@@ -52,10 +68,14 @@ function nmf_gradient_projected(X, r, W_init, H_init; max_iter=MAX_ITER_FIXED, t
         
         W_old = copy(W); H_old = copy(H)
 
-        W, iW = projected_gradient_W(X, H, W; tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, alpha_rule_W=alpha_rule_W)
+        W, iW = projected_gradient_W(X, H, W; 
+            tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, 
+            alpha_rule_W=alpha_rule_W, alpha_init=alpha_init, lambda=lambda)
         total_sub += iW
         
-        H, iH = projected_gradient_H(X, W, H; tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, alpha_rule_H=alpha_rule_H)
+        H, iH = projected_gradient_H(X, W, H; 
+            tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, 
+            alpha_rule_H=alpha_rule_H, alpha_init=alpha_init, lambda=lambda)
         total_sub += iH
 
         push!(errors, norm(X - W * H))
