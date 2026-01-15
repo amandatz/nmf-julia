@@ -39,6 +39,8 @@ function main()
             monotone = true,
             kwargs...
         ),
+
+        :pca => NMFProject.nmf_pca_wrapper,
     )
 
     # --- CARREGAMENTO ---
