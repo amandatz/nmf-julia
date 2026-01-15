@@ -14,7 +14,10 @@ end
 includet("../src/NMFProject.jl")
 using .NMFProject
 
-# Configurações
+# =========================================================================
+# CONFIGURAÇÕES GERAIS
+# =========================================================================
+
 const DATA_PATH = "data/att_face_dataset"
 const RANK      = 40
 const MAX_ITER  = 300
@@ -37,13 +40,13 @@ function main()
     models = Dict{Symbol,Function}(
         # :multiplicativo => NMFProject.nmf_multiplicative,
         :lin => NMFProject.nmf_lin_algorithm,
-        :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
-            X, r, W, H;
-            alpha_rule_W=NMFProject.make_rule_spectral_W(),
-            alpha_rule_H=NMFProject.make_rule_spectral_H(),
-            monotone=false,
-            kwargs...
-        ),
+        # :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
+        #     X, r, W, H;
+        #     alpha_rule_W=NMFProject.make_rule_spectral_W(),
+        #     alpha_rule_H=NMFProject.make_rule_spectral_H(),
+        #     monotone=false,
+        #     kwargs...
+        # ),
         # :pca => NMFProject.nmf_pca_wrapper,
     )
 
@@ -83,8 +86,9 @@ function main()
     println("Total Teste : $n_test imagens (3 por pessoa)")
 
     # =========================================================================
-    # 4. LOOP DE COMPARAÇÃO
+    # LOOP DE COMPARAÇÃO
     # =========================================================================
+    
     println("Gerando condições iniciais...")
     W_init_common = rand(m, RANK)
     H_init_common = rand(RANK, n_train)
@@ -95,27 +99,21 @@ function main()
         model_name = string(model_sym)
         println("\n>>> Modelo: $model_name")
 
-        # 1. TREINO
-        # t_start = time() # (Opcional, pois a função já retorna o tempo)
         W_train, H_train, errors, t_train, iters = algo_func(
             X_train, RANK,
             copy(W_init_common), copy(H_init_common);
             max_iter=MAX_ITER, tol=TOL
         )
 
-        # 2. PROJEÇÃO
         H_test = project_new_data(X_test, W_train, RANK)
 
-        # 3. CLASSIFICAÇÃO
         acertos = 0
         OUTPUT_DIR = joinpath("resultados", "face_recognition", "$(model_name)_Rank$(RANK)")
         if !isdir(OUTPUT_DIR)
             mkpath(OUTPUT_DIR)
         end
 
-        # Arquivo de log detalhado
         open(joinpath(OUTPUT_DIR, "log_detalhado.txt"), "w") do io
-            # Cabeçalho opcional
             println(io, "RELATÓRIO DE EXECUÇÃO: $model_name")
             println(io, "-----------------------------------")
 
@@ -147,13 +145,10 @@ function main()
             println(io, "TOTAL: $acertos acertos em $n_test testes.")
             println(io, "ACURÁCIA: $(round(acc, digits=2))%")
 
-            # --- ADICIONADO AQUI O TEMPO ---
             println(io, "TEMPO DE TREINO: $(round(t_train, digits=4))s")
-            # -------------------------------
 
-            # Guarda resultado para o resumo final no console
             push!(results_summary, (model_name, acc, t_train))
-            println("   ✅ Acurácia: $(round(acc, digits=2))% | Tempo: $(round(t_train, digits=2))s")
+            println("       Acurácia: $(round(acc, digits=2))% | Tempo: $(round(t_train, digits=2))s")
         end
     end
 

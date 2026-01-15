@@ -10,24 +10,24 @@ using .NMFProject
 Random.seed!(123)
 
 models = Dict{Symbol, Function}(
-    :multiplicativo => nmf_multiplicative,
+    # :multiplicativo => nmf_multiplicative,
     :lin => nmf_lin_algorithm,
 
-    :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
-        X, r, W, H;
-        alpha_rule_W = make_rule_spectral_W(),
-        alpha_rule_H = make_rule_spectral_H(),
-        monotone = false,
-        kwargs...
-    ),
+    # :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
+    #     X, r, W, H;
+    #     alpha_rule_W = make_rule_spectral_W(),
+    #     alpha_rule_H = make_rule_spectral_H(),
+    #     monotone = false,
+    #     kwargs...
+    # ),
 
-    :pg_spectral_monotone => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
-        X, r, W, H;
-        alpha_rule_W = make_rule_spectral_W(),
-        alpha_rule_H = make_rule_spectral_H(),
-        monotone = true,
-        kwargs...
-    ),
+    # :pg_spectral_monotone => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
+    #     X, r, W, H;
+    #     alpha_rule_W = make_rule_spectral_W(),
+    #     alpha_rule_H = make_rule_spectral_H(),
+    #     monotone = true,
+    #     kwargs...
+    # ),
 )
 
 # Configuração dos Testes

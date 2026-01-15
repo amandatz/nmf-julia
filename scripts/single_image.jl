@@ -5,7 +5,6 @@ using Plots
 using Statistics
 using Printf
 
-# Carrega o módulo (com Revise)
 try
     using Revise
 catch
@@ -14,39 +13,33 @@ includet("../src/NMFProject.jl")
 using .NMFProject
 
 # =========================================================================
-# 1. CONFIGURAÇÕES GERAIS
+# CONFIGURAÇÕES GERAIS
 # =========================================================================
 TARGET_IMG_PATH = "data/att_face_dataset/s1/1.pgm" 
-RANK            = 20    # Tente variar: 10, 20, 40
+RANK            = 20
 MAX_ITER        = 500
 TOLERANCE       = 1e-5
 
-# =========================================================================
-# 2. DEFINIÇÃO DOS MODELOS (SEU DICIONÁRIO)
-# =========================================================================
-# Nota: Adicionei o prefixo 'NMFProject.' para garantir que o Julia encontre 
-# as funções dentro do módulo.
-
 models = Dict{Symbol, Function}(
-    :multiplicativo => NMFProject.nmf_multiplicative,
+    # :multiplicativo => NMFProject.nmf_multiplicative,
     
     :lin => NMFProject.nmf_lin_algorithm,
 
-    :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
-        X, r, W, H;
-        alpha_rule_W = NMFProject.make_rule_spectral_W(),
-        alpha_rule_H = NMFProject.make_rule_spectral_H(),
-        monotone = false,
-        kwargs...
-    ),
+    # :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
+    #     X, r, W, H;
+    #     alpha_rule_W = NMFProject.make_rule_spectral_W(),
+    #     alpha_rule_H = NMFProject.make_rule_spectral_H(),
+    #     monotone = false,
+    #     kwargs...
+    # ),
 
-    :pg_spectral_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
-        X, r, W, H;
-        alpha_rule_W = NMFProject.make_rule_spectral_W(),
-        alpha_rule_H = NMFProject.make_rule_spectral_H(),
-        monotone = true,
-        kwargs...
-    ),
+    # :pg_spectral_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
+    #     X, r, W, H;
+    #     alpha_rule_W = NMFProject.make_rule_spectral_W(),
+    #     alpha_rule_H = NMFProject.make_rule_spectral_H(),
+    #     monotone = true,
+    #     kwargs...
+    # ),
 )
 
 # =========================================================================
@@ -75,7 +68,7 @@ for (model_sym, algo_func) in models
     model_name = string(model_sym) # Converte :lin para "lin"
     
     println("\n========================================")
-    println("▶️ Rodando: $model_name")
+    println("   Rodando: $model_name")
     println("========================================")
     
     # Roda o algoritmo
@@ -89,9 +82,9 @@ for (model_sym, algo_func) in models
         max_iter=MAX_ITER, tol=TOLERANCE
     )
     
-    println("   ↳ Tempo: $(round(t_total, digits=3))s")
-    println("   ↳ Iterações: $iters")
-    println("   ↳ Erro Final: $(round(last(errors), digits=5))")
+    println("       Tempo: $(round(t_total, digits=3))s")
+    println("       Iterações: $iters")
+    println("       Erro Final: $(round(last(errors), digits=5))")
 
     # --- SALVAMENTO ---
     output_dir = joinpath("resultados", "single_image", model_name)
@@ -117,7 +110,7 @@ for (model_sym, algo_func) in models
     )
     savefig(p_comp, joinpath(output_dir, "02_Comparacao.png"))
     
-    println("   ✅ Resultados salvos em: $output_dir")
+    println("       Resultados salvos em: $output_dir")
 end
 
-println("\n🏁 Todos os modelos finalizados!")
+println("\n=== Modelos finalizados ===")
