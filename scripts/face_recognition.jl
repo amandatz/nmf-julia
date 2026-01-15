@@ -25,7 +25,9 @@ const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7  # O dataset tem 10 imagens por pessoa, usamos 7 para treino e 3 para teste
 const IMG_SIZE = (112, 92)
 
-function project_new_data(data, W_fixed, r)
+# W_train: dicionário de rostos (deve estar fixo)
+# Com X_test, reconstruimos H
+function project_new_data(data, W_fixed, r)     
     cols = size(data, 2)
     H_proj = rand(r, cols)
     WtV = W_fixed' * data
@@ -50,6 +52,10 @@ function main()
         # :pca => NMFProject.nmf_pca_wrapper,
     )
 
+    # =========================================================================
+    # SPLIT
+    # =========================================================================
+    
     println("--- Separando Dataset (70% Treino / 30% Teste) ---")
 
     train_matrix = []
@@ -99,7 +105,7 @@ function main()
         model_name = string(model_sym)
         println("\n>>> Modelo: $model_name")
 
-        W_train, H_train, errors, t_train, iters = algo_func(
+        W_train, H_train, errors, t_train, iters = algo_func(       # fatora X_train
             X_train, RANK,
             copy(W_init_common), copy(H_init_common);
             max_iter=MAX_ITER, tol=TOL
@@ -117,6 +123,7 @@ function main()
             println(io, "RELATÓRIO DE EXECUÇÃO: $model_name")
             println(io, "-----------------------------------")
 
+            # Compara H_train com a H_test
             for i in 1:n_test
                 h_unk = H_test[:, i]
                 real_id = test_labels[i]
