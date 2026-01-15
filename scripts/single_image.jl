@@ -71,7 +71,7 @@ function main()
         )
         
         # Prints de resultado
-        println("       Tempo: $(round(t_total, digits=3))s")
+        println("\n       Tempo: $(round(t_total, digits=3))s")
         println("       Iterações: $iters")
         err_final = isempty(errors) ? NaN : last(errors)
         println("       Erro Final: $(round(err_final, digits=5))")
