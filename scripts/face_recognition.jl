@@ -102,6 +102,9 @@ function main()
     # =========================================================================
     
     println("Gerando condições iniciais...")
+
+    Random.seed!(1234)
+
     W_init_common = rand(m, RANK)
     H_init_common = rand(RANK, n_train)
 

@@ -30,7 +30,6 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
         suff_decr = (1-sigma)*sum(G .* d) + 0.5*tr(d * HHt * d') <= 0
 
         if suff_decr
-            # Se o passo é bom, tenta aumentar para ser mais rápido
             while suff_decr
                 W = copy(W_cand)
                 alpha /= beta
@@ -41,11 +40,10 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
                 
                 if alpha > 1e10; break; end
             end
-            alpha *= beta # Volta um passo (segurança)
+            alpha *= beta
         else
-            # Se o passo é ruim, diminui até ficar bom
             while !suff_decr
-                alpha *= beta # Diminui alpha
+                alpha *= beta
                 W_cand = max.(W_old .- alpha .* G, 0.0)
                 d = W_cand .- W_old
                 suff_decr = (1-sigma)*sum(G .* d) + 0.5*tr(d * HHt * d') <= 0
@@ -84,6 +82,7 @@ function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_it
         
         suff_decr = (1-sigma)*sum(G .* d) + 0.5*tr(d' * WtW * d) <= 0
 
+        # AUMENTA O TAMANHO DE PASSO: ADICIONADO PARA OTIMIZAÇÃO, NÃO TEM NO ARTIGO DO LIN
         if suff_decr
             while suff_decr
                 H = copy(H_cand)
@@ -139,8 +138,9 @@ function nmf_lin_algorithm(
 
     timestamp = Dates.format(now(), "HH:MM:SS")
     println(log_io, "[$timestamp] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol, Beta=0.5)")
-    println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | SUB_W | SUB_H")
-    println(log_io, "----------------------------------------------------------------------------------------------------------")
+    
+    println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | SUB_W | SUB_H | TIME(s)")
+    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
 
     alpha_W = 1.0
     alpha_H = 1.0
@@ -168,15 +168,17 @@ function nmf_lin_algorithm(
 
         if iter == 1 || iter % log_interval == 0
             t_now = Dates.format(now(), "HH:MM:SS")
-            @printf(log_io, "[%s] [LIN_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %03d  |  %03d\n", 
-                    t_now, iter, current_error, deltaW, deltaH, alpha_W, alpha_H, iter_W, iter_H)
+            elapsed_iter = time() - t_start # Tempo decorrido
+            @printf(log_io, "[%s] [LIN_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %03d  |  %03d  | %6.2f\n", 
+                    t_now, iter, current_error, deltaW, deltaH, alpha_W, alpha_H, iter_W, iter_H, elapsed_iter)
             flush(log_io) 
         end
 
         if deltaW < tol && deltaH < tol
             converged = true
             t_now = Dates.format(now(), "HH:MM:SS")
-            println(log_io, "[$t_now] [LIN_ALGO] CONVERGED at Iter $iter")
+            elapsed_total = time() - t_start
+            println(log_io, "[$t_now] [LIN_ALGO] CONVERGED at Iter $iter (Time: $(round(elapsed_total, digits=2))s)")
             break
         end
     end
@@ -187,6 +189,6 @@ function nmf_lin_algorithm(
     end
 
     elapsed = time() - t_start
-    println(log_io, "----------------------------------------------------------------------------------------------------------")
+    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
     return W, H, errors, elapsed, total_sub_iters
 end

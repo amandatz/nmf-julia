@@ -85,10 +85,8 @@ function nmf_gradient_projected(X, r, W_init, H_init;
     println(log_io, "[$timestamp] [PG_ALGO] Starting Projected Gradient Optimization")
     println(log_io, "[$timestamp] [PG_ALGO] Config: MaxIter=$max_iter | Tol=$tol | Monotone=$monotone")
     println(log_io, "[$timestamp] [PG_ALGO] SubConfig: SubMaxIter=$sub_max_iter | SubTol=$sub_tol")
-    
-    # Cabeçalho atualizado com todas as colunas
-    println(log_io, "[$timestamp] [PG_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | SUB_W | SUB_H")
-    println(log_io, "----------------------------------------------------------------------------------------------------------")
+    println(log_io, "[$timestamp] [PG_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | ITER_SUB_W | ITER_SUB_H | TIME(s)")
+    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
 
     converged = false
 
@@ -117,8 +115,10 @@ function nmf_gradient_projected(X, r, W_init, H_init;
         # --- Log Periódico ---
         if iter == 1 || iter % log_interval == 0
             t_now = Dates.format(now(), "HH:MM:SS")
-            @printf(log_io, "[%s] [PG_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %03d  |  %03d\n", 
-                    t_now, iter, current_error, deltaW, deltaH, curr_alpha_W, curr_alpha_H, iW, iH)
+            elapsed_iter = time() - t_start # Calcula tempo decorrido até agora
+
+            @printf(log_io, "[%s] [PG_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %03d  |  %03d  | %6.2f\n", 
+                    t_now, iter, current_error, deltaW, deltaH, curr_alpha_W, curr_alpha_H, iW, iH, elapsed_iter)
             flush(log_io)
         end
 
@@ -126,7 +126,8 @@ function nmf_gradient_projected(X, r, W_init, H_init;
         if deltaW < tol && deltaH < tol
             converged = true
             t_now = Dates.format(now(), "HH:MM:SS")
-            println(log_io, "[$t_now] [PG_ALGO] CONVERGED at Iter $iter")
+            elapsed_total = time() - t_start
+            println(log_io, "[$t_now] [PG_ALGO] CONVERGED at Iter $iter (Time: $(round(elapsed_total, digits=2))s)")
             break
         end
     end
@@ -137,7 +138,7 @@ function nmf_gradient_projected(X, r, W_init, H_init;
     end
 
     elapsed = time() - t_start
-    println(log_io, "----------------------------------------------------------------------------------------------------------")
+    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
 
     return W, H, errors, elapsed, total_sub
 end

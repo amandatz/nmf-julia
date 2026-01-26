@@ -19,6 +19,8 @@ function main()
     max_iter        = 500
     tolerance       = 1e-5
 
+    Random.seed!(1234)
+
     models = Dict{Symbol, Function}(
         :multiplicativo => NMFProject.nmf_multiplicative,
         
