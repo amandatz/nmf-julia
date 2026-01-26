@@ -1,8 +1,17 @@
-[2026-01-25 22:20:37] INIT_SESSION: Face Recognition NMF Experiment
-[2026-01-25 22:20:37] CONFIG: Model=pca | Rank=40 | MaxIter=500 | Tol=0.0001
-[2026-01-25 22:20:37] DATASET: TrainSize=280 | TestSize=120 | ImgSize=(112, 92)
-[2026-01-25 22:20:37] TRAINING_COMPLETE: Time=0.373s | Iterations=1 | FinalError=116.17225302831068
+[2026-01-26 03:35:45] SESSION_START: Face Recognition Experiment
+[2026-01-26 03:35:45] SETUP: Model=pca | Rank=40 | MaxIter=500
+[2026-01-26 03:35:45] STATUS: Starting Training Loop...
 
+[03:35:45] [PCA_ALGO]  Starting Direct SVD Decomposition (Rank=40)
+--------------------------------------------------------------------------
+[03:35:45] [PCA_ALGO]  Computing Singular Value Decomposition...
+[03:35:46] [PCA_ALGO]  DONE | Final Error: 1.161723e+02 | Time: 0.4060s
+--------------------------------------------------------------------------
+
+[2026-01-26 03:35:46] STATUS: Training Finished. Time=0.406s
+[2026-01-26 03:35:46] STATUS: Projecting Test Data and Classifying...
+
+=== CLASSIFICATION REPORT ===
 IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 --------------------------------------------------------
 001 |   01    |   01    |  9.3416  |   0001    | HIT 
@@ -126,5 +135,5 @@ IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 119 |   40    |   40    |  5.3214  |   0280    | HIT 
 120 |   40    |   05    |  8.3834  |   0030    | MISS
 --------------------------------------------------------
-[2026-01-25 22:20:37] SUMMARY: Accuracy=96.67% (116/120)
-[2026-01-25 22:20:37] END_SESSION
+[2026-01-26 03:35:46] SUMMARY: Accuracy=96.67% (116/120)
+[2026-01-26 03:35:46] SESSION_END

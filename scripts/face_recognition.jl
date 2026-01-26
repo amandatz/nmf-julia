@@ -23,18 +23,18 @@ const DATA_PATH = "data/att_face_dataset"
 const RANK      = 40
 const MAX_ITER  = 500
 const TOL       = 1e-4
-const NUM_TRAIN_PER_PERSON = 7  # O dataset tem 10 imagens por pessoa, usamos 7 para treino e 3 para teste
+const NUM_TRAIN_PER_PERSON = 7 
 const IMG_SIZE = (112, 92)
 
 # Função auxiliar para log com timestamp
 function log_msg(io::IO, msg::String)
     t = Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
     println(io, "[$t] $msg")
-    # println("[$t] $msg") 
+    # Se quiser ver no terminal ao mesmo tempo, descomente abaixo:
+    println("[$t] $msg") 
 end
 
-# W_train: dicionário de rostos (deve estar fixo)
-# Com X_test, reconstruimos H
+# Função de projeção para dados de teste (mantida igual)
 function project_new_data(data, W_fixed, r)     
     cols = size(data, 2)
     H_proj = rand(r, cols)
@@ -55,13 +55,13 @@ function main()
             alpha_rule_W=NMFProject.make_rule_spectral_W(),
             alpha_rule_H=NMFProject.make_rule_spectral_H(),
             monotone=false,
-            kwargs...
+            kwargs... 
         ),
         :pca => NMFProject.nmf_pca_wrapper,
     )
 
     # =========================================================================
-    # SPLIT
+    # SPLIT (CARREGAMENTO DOS DADOS)
     # =========================================================================
     
     println("--- Separando Dataset (70% Treino / 30% Teste) ---")
@@ -73,17 +73,16 @@ function main()
 
     for person_id in 1:40
         folder_path = joinpath(DATA_PATH, "s$person_id")
-        # Ordena para garantir reprodutibilidade
         images_files = sort([joinpath(folder_path, f) for f in readdir(folder_path) if endswith(f, ".pgm")])
 
         for (img_idx, img_path) in enumerate(images_files)
             img = Float64.(Gray.(load(img_path)))
             img_vec = vec(img)
 
-            if img_idx <= NUM_TRAIN_PER_PERSON      # TREINO
+            if img_idx <= NUM_TRAIN_PER_PERSON
                 push!(train_matrix, img_vec)
                 push!(train_labels, person_id)
-            else                                    # TESTE
+            else
                 push!(test_matrix, img_vec)
                 push!(test_labels, person_id)
             end
@@ -94,8 +93,9 @@ function main()
     X_test = hcat(test_matrix...)
     m, n_train = size(X_train)
     _, n_test = size(X_test)
-    println("Total Treino: $n_train imagens (7 por pessoa)")
-    println("Total Teste : $n_test imagens (3 por pessoa)")
+    
+    println("Total Treino: $n_train imagens")
+    println("Total Teste : $n_test imagens")
 
     # =========================================================================
     # LOOP DE COMPARAÇÃO
@@ -109,41 +109,51 @@ function main()
 
     for (model_sym, algo_func) in models
         model_name = string(model_sym)
-        println("\n>>> Executando Modelo: $model_name")
+        println("\n>>> Preparando Modelo: $model_name")
 
-        # Captura tempo de início real para log
-        t_start = time()
-        
-        W_train, H_train, errors, t_train, iters = algo_func(       # fatora X_train
-            X_train, RANK,
-            copy(W_init_common), copy(H_init_common);
-            max_iter=MAX_ITER, tol=TOL
-        )
-
-        H_test = project_new_data(X_test, W_train, RANK)
-
-        # Preparação do arquivo de log
+        # 1. CRIAR DIRETÓRIO E ARQUIVO ANTES DO TREINO
         OUTPUT_DIR = joinpath("resultados", "face_recognition", "$(model_name)_Rank$(RANK)")
         if !isdir(OUTPUT_DIR)
             mkpath(OUTPUT_DIR)
         end
-        
         log_path = joinpath(OUTPUT_DIR, "execution.log")
 
+        # Abre o arquivo agora para capturar TUDO
         open(log_path, "w") do io
-            # --- CABEÇALHO DO LOG ---
-            log_msg(io, "INIT_SESSION: Face Recognition NMF Experiment")
-            log_msg(io, "CONFIG: Model=$model_name | Rank=$RANK | MaxIter=$MAX_ITER | Tol=$TOL")
-            log_msg(io, "DATASET: TrainSize=$n_train | TestSize=$n_test | ImgSize=$IMG_SIZE")
-            log_msg(io, "TRAINING_COMPLETE: Time=$(round(t_train, digits=4))s | Iterations=$iters | FinalError=$(isempty(errors) ? "N/A" : last(errors))")
             
+            # --- Cabeçalho Geral ---
+            log_msg(io, "SESSION_START: Face Recognition Experiment")
+            log_msg(io, "SETUP: Model=$model_name | Rank=$RANK | MaxIter=$MAX_ITER")
+
+            # 2. EXECUTA O ALGORITMO PASSANDO O IO
+            # Agora passamos 'io' para dentro da função. 
+            # O algoritmo vai escrever o progresso iterativo neste mesmo arquivo.
+            log_msg(io, "STATUS: Starting Training Loop...")
+            println(io, "") # Espaçamento
+            
+            W_train, H_train, errors, t_train, iters = algo_func(
+                X_train, RANK,
+                copy(W_init_common), copy(H_init_common);
+                max_iter=MAX_ITER, tol=TOL,
+                log_io=io,          # <--- O PULO DO GATO: O log interno vai aqui
+                log_interval=20     # <--- Define a frequência do log interno
+            )
+
+            println(io, "") # Espaçamento pós-treino
+            log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
+
+            # 3. PROJEÇÃO E TESTE
+            log_msg(io, "STATUS: Projecting Test Data and Classifying...")
+            
+            H_test = project_new_data(X_test, W_train, RANK)
+
             println(io, "")
+            println(io, "=== CLASSIFICATION REPORT ===")
             println(io, "IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS")
             println(io, "--------------------------------------------------------")
 
             acertos = 0
-
-            # Compara H_train com a H_test
+            
             for i in 1:n_test
                 h_unk = H_test[:, i]
                 real_id = test_labels[i]
@@ -151,7 +161,7 @@ function main()
                 # Nearest Neighbor
                 min_dist = Inf
                 predicted_id = -1
-                match_idx = -1 # Qual imagem do treino foi a mais próxima
+                match_idx = -1
 
                 for j in 1:n_train
                     dist = norm(h_unk - H_train[:, j])
@@ -163,14 +173,10 @@ function main()
                 end
 
                 is_correct = (predicted_id == real_id)
-                if is_correct
-                    acertos += 1
-                end
+                if is_correct; acertos += 1; end
                 
                 status_str = is_correct ? "HIT " : "MISS"
                 
-                # grava linha formatada no log
-                # %03d = inteiro com 3 digitos (001), %.4f = float com 4 casas
                 @printf(io, "%03d |   %02d    |   %02d    |  %.4f  |   %04d    | %s\n", 
                         i, real_id, predicted_id, min_dist, match_idx, status_str)
             end
@@ -179,10 +185,10 @@ function main()
             
             println(io, "--------------------------------------------------------")
             log_msg(io, "SUMMARY: Accuracy=$(round(acc, digits=2))% ($acertos/$n_test)")
-            log_msg(io, "END_SESSION")
+            log_msg(io, "SESSION_END")
 
-            # Feedback no console
-            println("      -> Acurácia: $(round(acc, digits=2))% | Tempo: $(round(t_train, digits=2))s | Log salvo em: $log_path")
+            # Feedback no console (Terminal)
+            println("   -> Concluído! Acurácia: $(round(acc, digits=2))% | Log: $log_path")
             push!(results_summary, (model_name, acc, t_train))
         end
     end

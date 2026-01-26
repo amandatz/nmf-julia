@@ -10,7 +10,8 @@ using Dates
 function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
     W = copy(W0)
     alpha = alpha_init
-    beta = 0.1
+    
+    beta = 0.5 
     sigma = 0.01
 
     HHt = H * H'
@@ -26,10 +27,10 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
         W_cand = max.(W_old .- alpha .* G, 0.0)
         d = W_cand .- W_old
         
-        # Condição de Armijo
         suff_decr = (1-sigma)*sum(G .* d) + 0.5*tr(d * HHt * d') <= 0
 
         if suff_decr
+            # Se o passo é bom, tenta aumentar para ser mais rápido
             while suff_decr
                 W = copy(W_cand)
                 alpha /= beta
@@ -40,10 +41,11 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
                 
                 if alpha > 1e10; break; end
             end
-            alpha *= beta
+            alpha *= beta # Volta um passo (segurança)
         else
+            # Se o passo é ruim, diminui até ficar bom
             while !suff_decr
-                alpha *= beta
+                alpha *= beta # Diminui alpha
                 W_cand = max.(W_old .- alpha .* G, 0.0)
                 d = W_cand .- W_old
                 suff_decr = (1-sigma)*sum(G .* d) + 0.5*tr(d * HHt * d') <= 0
@@ -64,7 +66,7 @@ end
 function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
     H = copy(H0)
     alpha = alpha_init
-    beta = 0.1
+    beta = 0.5
     sigma = 0.01
 
     WtW = W' * W
@@ -124,8 +126,8 @@ function nmf_lin_algorithm(
     tol = 1e-5,
     sub_max_iter = 50,
     sub_tol = 1e-4,
-    log_io::IO = stdout,    # Onde escrever o log
-    log_interval::Int = 10  # Frequência do log
+    log_io::IO = stdout,
+    log_interval::Int = 10
 )
     m, n = size(X)
     W = copy(W_init)
@@ -135,13 +137,11 @@ function nmf_lin_algorithm(
     t_start = time()
     total_sub_iters = 0
 
-    # Cabeçalho do Log Interno
     timestamp = Dates.format(now(), "HH:MM:SS")
-    println(log_io, "[$timestamp] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol)")
-    println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H")
-    println(log_io, "------------------------------------------------------------------------------------------")
+    println(log_io, "[$timestamp] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol, Beta=0.5)")
+    println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | SUB_W | SUB_H")
+    println(log_io, "----------------------------------------------------------------------------------------------------------")
 
-    # Inicialização dos tamanhos de passo
     alpha_W = 1.0
     alpha_H = 1.0
     
@@ -151,45 +151,42 @@ function nmf_lin_algorithm(
         W_old = copy(W)
         H_old = copy(H)
 
-        # --- Subproblema W ---
+        # Captura iter_W e iter_H
         W, iter_W, alpha_W = projected_gradient_lin_W(X, H, W;
             alpha_init = alpha_W, tol = sub_tol, max_iter = sub_max_iter)
         total_sub_iters += iter_W
 
-        # --- Subproblema H ---
         H, iter_H, alpha_H = projected_gradient_lin_H(X, W, H;
             alpha_init = alpha_H, tol = sub_tol, max_iter = sub_max_iter)
         total_sub_iters += iter_H
 
-        # cálculo de erro e deltas
         current_error = norm(X - W * H)
         push!(errors, current_error)
 
         deltaW = norm(W - W_old) / max(1.0, norm(W_old))
         deltaH = norm(H - H_old) / max(1.0, norm(H_old))
 
-        # log: Escreve apenas no intervalo definido ou na primeira iteração
         if iter == 1 || iter % log_interval == 0
             t_now = Dates.format(now(), "HH:MM:SS")
-            @printf(log_io, "[%s] [LIN_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e\n", 
-                    t_now, iter, current_error, deltaW, deltaH, alpha_W, alpha_H)
-            flush(log_io) # garante que escreva no arquivo imediatamente
+            @printf(log_io, "[%s] [LIN_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %03d  |  %03d\n", 
+                    t_now, iter, current_error, deltaW, deltaH, alpha_W, alpha_H, iter_W, iter_H)
+            flush(log_io) 
         end
 
         if deltaW < tol && deltaH < tol
             converged = true
             t_now = Dates.format(now(), "HH:MM:SS")
-            println(log_io, "[$t_now] [LIN_ALGO] CONVERGED at Iter $iter (DeltaW=$deltaW, DeltaH=$deltaH)")
+            println(log_io, "[$t_now] [LIN_ALGO] CONVERGED at Iter $iter")
             break
         end
     end
 
     if !converged
         t_now = Dates.format(now(), "HH:MM:SS")
-        println(log_io, "[$t_now] [LIN_ALGO] STOPPED: Max Iterations Reached ($max_iter)")
+        println(log_io, "[$t_now] [LIN_ALGO] STOPPED: Max Iterations Reached")
     end
 
     elapsed = time() - t_start
-    println(log_io, "------------------------------------------------------------------------------------------")
+    println(log_io, "----------------------------------------------------------------------------------------------------------")
     return W, H, errors, elapsed, total_sub_iters
 end
