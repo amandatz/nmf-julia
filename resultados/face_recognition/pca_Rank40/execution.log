@@ -1,15 +1,15 @@
-[2026-01-26 03:35:45] SESSION_START: Face Recognition Experiment
-[2026-01-26 03:35:45] SETUP: Model=pca | Rank=40 | MaxIter=500
-[2026-01-26 03:35:45] STATUS: Starting Training Loop...
+[2026-01-27 08:24:40] SESSION_START: Face Recognition Experiment
+[2026-01-27 08:24:40] SETUP: Model=pca | Rank=40 | MaxIter=500
+[2026-01-27 08:24:40] STATUS: Starting Training Loop...
 
-[03:35:45] [PCA_ALGO]  Starting Direct SVD Decomposition (Rank=40)
+[08:24:40] [PCA_ALGO]  Starting Direct SVD Decomposition (Rank=40)
 --------------------------------------------------------------------------
-[03:35:45] [PCA_ALGO]  Computing Singular Value Decomposition...
-[03:35:46] [PCA_ALGO]  DONE | Final Error: 1.161723e+02 | Time: 0.4060s
+[08:24:40] [PCA_ALGO]  Computing Singular Value Decomposition...
+[08:24:41] [PCA_ALGO]  DONE | Final Error: 1.161723e+02 | Time: 0.4570s
 --------------------------------------------------------------------------
 
-[2026-01-26 03:35:46] STATUS: Training Finished. Time=0.406s
-[2026-01-26 03:35:46] STATUS: Projecting Test Data and Classifying...
+[2026-01-27 08:24:41] STATUS: Training Finished. Time=0.457s
+[2026-01-27 08:24:41] STATUS: Projecting Test Data and Classifying...
 
 === CLASSIFICATION REPORT ===
 IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
@@ -135,5 +135,5 @@ IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 119 |   40    |   40    |  5.3214  |   0280    | HIT 
 120 |   40    |   05    |  8.3834  |   0030    | MISS
 --------------------------------------------------------
-[2026-01-26 03:35:46] SUMMARY: Accuracy=96.67% (116/120)
-[2026-01-26 03:35:46] SESSION_END
+[2026-01-27 08:24:41] SUMMARY: Accuracy=96.67% (116/120)
+[2026-01-27 08:24:41] SESSION_END

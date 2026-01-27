@@ -7,7 +7,7 @@ using Dates
 # Funções Auxiliares
 # ==========================================================
 
-function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
+function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_iter = 500)
     W = copy(W0)
     alpha = alpha_init
     
@@ -61,7 +61,7 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
     return W, inner_iter, alpha
 end
 
-function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
+function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_iter = 500)
     H = copy(H0)
     alpha = alpha_init
     beta = 0.5
@@ -139,7 +139,7 @@ function nmf_lin_algorithm(
     timestamp = Dates.format(now(), "HH:MM:SS")
     println(log_io, "[$timestamp] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol, Beta=0.5)")
     
-    println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | SUB_W | SUB_H | TIME(s)")
+    println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | ITER_SUB_W | ITER_SUB_H | TIME(s)")
     println(log_io, "--------------------------------------------------------------------------------------------------------------------")
 
     alpha_W = 1.0

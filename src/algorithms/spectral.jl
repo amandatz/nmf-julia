@@ -7,7 +7,7 @@ using Dates
 # Subproblemas (W e H)
 # ==========================================================
 
-function projected_gradient_W(X, H, W0; alpha_init=1e-3, lambda=0.0, tol=1e-6, max_iter=1000, monotone=true, alpha_rule_W=(args...)->args[5])
+function projected_gradient_W(X, H, W0; alpha_init=1e-3, lambda=0.0, tol=1e-6, max_iter=500, monotone=true, alpha_rule_W=(args...)->args[5])
     W = copy(W0)
     alpha = alpha_init
     f_W(Wt, Ht) = 0.5 * norm(X - Wt*Ht)^2 + (lambda/2)*norm(Wt)^2
