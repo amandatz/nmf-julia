@@ -26,15 +26,14 @@ const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7 
 const IMG_SIZE = (112, 92)
 
-# Função auxiliar para log com timestamp
+# Função auxiliar para log
 function log_msg(io::IO, msg::String)
     t = Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
     println(io, "[$t] $msg")
-    # Se quiser ver no terminal ao mesmo tempo, descomente abaixo:
     println("[$t] $msg") 
 end
 
-# Função de projeção para dados de teste (mantida igual)
+# Função de projeção para dados de teste
 function project_new_data(data, W_fixed, r)     
     cols = size(data, 2)
     H_proj = rand(r, cols)
@@ -114,38 +113,34 @@ function main()
         model_name = string(model_sym)
         println("\n>>> Preparando Modelo: $model_name")
 
-        # 1. CRIAR DIRETÓRIO E ARQUIVO ANTES DO TREINO
+        # CRIAR DIRETÓRIO E ARQUIVO ANTES DO TREINO
         OUTPUT_DIR = joinpath("resultados", "face_recognition", "$(model_name)_Rank$(RANK)")
         if !isdir(OUTPUT_DIR)
             mkpath(OUTPUT_DIR)
         end
         log_path = joinpath(OUTPUT_DIR, "execution.log")
 
-        # Abre o arquivo agora para capturar TUDO
         open(log_path, "w") do io
             
             # --- Cabeçalho Geral ---
             log_msg(io, "SESSION_START: Face Recognition Experiment")
             log_msg(io, "SETUP: Model=$model_name | Rank=$RANK | MaxIter=$MAX_ITER")
 
-            # 2. EXECUTA O ALGORITMO PASSANDO O IO
-            # Agora passamos 'io' para dentro da função. 
-            # O algoritmo vai escrever o progresso iterativo neste mesmo arquivo.
             log_msg(io, "STATUS: Starting Training Loop...")
-            println(io, "") # Espaçamento
+            println(io, "")
             
             W_train, H_train, errors, t_train, iters = algo_func(
                 X_train, RANK,
                 copy(W_init_common), copy(H_init_common);
                 max_iter=MAX_ITER, tol=TOL,
-                log_io=io,          # <--- O PULO DO GATO: O log interno vai aqui
-                log_interval=20     # <--- Define a frequência do log interno
+                log_io=io,
+                log_interval=20 
             )
 
-            println(io, "") # Espaçamento pós-treino
+            println(io, "")
             log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
 
-            # 3. PROJEÇÃO E TESTE
+            # PROJEÇÃO E TESTE
             log_msg(io, "STATUS: Projecting Test Data and Classifying...")
             
             H_test = project_new_data(X_test, W_train, RANK)
@@ -190,7 +185,7 @@ function main()
             log_msg(io, "SUMMARY: Accuracy=$(round(acc, digits=2))% ($acertos/$n_test)")
             log_msg(io, "SESSION_END")
 
-            # Feedback no console (Terminal)
+            # Feedback no console
             println("   -> Concluído! Acurácia: $(round(acc, digits=2))% | Log: $log_path")
             push!(results_summary, (model_name, acc, t_train))
         end

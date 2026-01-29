@@ -37,7 +37,7 @@ function make_rule_spectral_H()
     end
 end
 
-# --- Armijo / Line Search Genérico ---
+# --- Armijo / Line search generico ---
 function line_search_segment!(A_old, A_new, G, fixed_mat, f; 
                               beta = 0.5, sigma = 0.1, theta_min = 1e-12, 
                               monotone = true, f_hist = nothing, M_hist = 5)
@@ -55,7 +55,7 @@ function line_search_segment!(A_old, A_new, G, fixed_mat, f;
     end
 
     theta = 1.0
-    A_new_temp = copy(A_new) # Evitar modificar in-place sem querer antes da hora
+    A_new_temp = copy(A_new)
     f_new = f(A_new_temp, fixed_mat)
 
     while f_new > f_ref - sigma * theta * inner
@@ -65,7 +65,6 @@ function line_search_segment!(A_old, A_new, G, fixed_mat, f;
         f_new = f(A_new_temp, fixed_mat)
     end
     
-    # Atualiza o A_new original com o passo aceito
     A_new .= A_new_temp
 
     if !monotone

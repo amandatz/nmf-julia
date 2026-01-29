@@ -5,7 +5,7 @@ using Dates
 
 function nmf_multiplicative(
     X, r, W_init, H_init;
-    max_iter = 200,    # Valores padrão caso não sejam passados
+    max_iter = 200,
     tol = 1e-4,
     log_io::IO = stdout,    # Onde escrever o log (padrão: tela)
     log_interval::Int = 10  # Frequência do log

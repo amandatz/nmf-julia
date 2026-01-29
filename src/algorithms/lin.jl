@@ -138,7 +138,6 @@ function nmf_lin_algorithm(
 
     timestamp = Dates.format(now(), "HH:MM:SS")
     println(log_io, "[$timestamp] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol, Beta=0.5)")
-    
     println(log_io, "[$timestamp] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | ITER_SUB_W | ITER_SUB_H | TIME(s)")
     println(log_io, "--------------------------------------------------------------------------------------------------------------------")
 
@@ -151,7 +150,6 @@ function nmf_lin_algorithm(
         W_old = copy(W)
         H_old = copy(H)
 
-        # Captura iter_W e iter_H
         W, iter_W, alpha_W = projected_gradient_lin_W(X, H, W;
             alpha_init = alpha_W, tol = sub_tol, max_iter = sub_max_iter)
         total_sub_iters += iter_W
