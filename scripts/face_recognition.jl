@@ -34,11 +34,13 @@ function log_msg(io::IO, msg::String)
 end
 
 # Função de projeção para dados de teste
-function project_new_data(data, W_fixed, r)     
+function project_new_data(data, W_fixed, r; method=:multiplicative, kwargs...)     
     cols = size(data, 2)
     H_proj = rand(r, cols)
     WtV = W_fixed' * data
     WtW = W_fixed' * W_fixed
+
+    # TODO: ESTÁ FIXO NO METODO MULTIPLICATIVO, FAZER CONFORME METODO ATUAL
     for i in 1:60
         H_proj .= H_proj .* (WtV ./ (WtW * H_proj .+ 1e-9))
     end
