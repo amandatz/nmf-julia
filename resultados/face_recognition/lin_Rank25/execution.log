@@ -1,17 +1,17 @@
-[2026-02-08 16:28:42] SESSION_START: Face Recognition Experiment
-[2026-02-08 16:28:42] SETUP: Model=lin | Rank=25 | MaxIter=300
-[2026-02-08 16:28:42] STATUS: Starting Training Loop...
+[2026-02-08 16:34:46] SESSION_START: Face Recognition Experiment
+[2026-02-08 16:34:46] SETUP: Model=lin | Rank=25 | MaxIter=300
+[2026-02-08 16:34:46] STATUS: Starting Training Loop...
 
-[16:28:42] [LIN_ALGO] Starting Optimization (MaxIter=300, Tol=0.0001)
-[16:28:42] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
+[16:34:46] [LIN_ALGO] Starting Optimization (MaxIter=300, Tol=0.0001)
+[16:34:46] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
 -------------------------------------------------------------------------------------
-[16:28:44] [LIN_ALGO] 0001 | 2.285539e-01 | 9.4964e-01 | 7.7805e-01 |   2.20
-[16:28:47] [LIN_ALGO] 0008 | 1.786874e-01 | 0.0000e+00 | 0.0000e+00 |   5.34
-[16:28:47] [LIN_ALGO] STOPPED at Iter 8: Converged (Delta < 0.0001)
+[16:34:49] [LIN_ALGO] 0001 | 2.285539e-01 | 9.4964e-01 | 7.7805e-01 |   2.52
+[16:34:52] [LIN_ALGO] 0008 | 1.786874e-01 | 0.0000e+00 | 0.0000e+00 |   5.82
+[16:34:52] [LIN_ALGO] STOPPED at Iter 8: Converged (Delta < 0.0001)
 -------------------------------------------------------------------------------------
 
-[2026-02-08 16:28:47] STATUS: Training Finished. Time=5.338s
-[2026-02-08 16:28:47] STATUS: Projecting Test Data and Classifying...
+[2026-02-08 16:34:52] STATUS: Training Finished. Time=5.82s
+[2026-02-08 16:34:52] STATUS: Projecting Test Data and Classifying...
 
 === CLASSIFICATION REPORT ===
 IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
@@ -137,5 +137,5 @@ IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 119 |   40    |   40    |  1.2585  |   0280    | HIT 
 120 |   40    |   05    |  1.5112  |   0030    | MISS
 --------------------------------------------------------
-[2026-02-08 16:28:48] SUMMARY: Accuracy=90.0% (108/120)
-[2026-02-08 16:28:48] SESSION_END
+[2026-02-08 16:34:52] SUMMARY: Accuracy=90.0% (108/120)
+[2026-02-08 16:34:52] SESSION_END

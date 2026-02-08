@@ -115,12 +115,12 @@ function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_it
 end
 
 # =========================================================================
-# Algoritmo Principal LIN (Com Log da Última Iteração)
+# Algoritmo Principal
 # =========================================================================
 
-function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
+function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-4, log_io=stdout, log_interval=10)
     sub_max_iter = 1000
-    sub_tol = 1e-3
+    sub_tol = 1e-5
     
     m, n = size(X)
     W = copy(W_init)
