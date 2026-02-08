@@ -22,7 +22,7 @@ function nmf_pca_wrapper(
     
     t_total = time() - t_start
     
-    final_error = norm(X - W*H)
+    final_error = norm(X - W * H) / max(1.0, norm(X))
     errors = [final_error]
     iters = 1 
     

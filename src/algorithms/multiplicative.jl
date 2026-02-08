@@ -45,7 +45,7 @@ function nmf_multiplicative(
         W .= W .* (numerator_W ./ denominator_W)
 
         # --- Métricas de Convergência ---
-        current_error = norm(X - W * H)
+        current_error = norm(X - W * H) / max(1.0, norm(X))
         push!(errors, current_error)
 
         deltaW = norm(W - W_old) / max(1.0, norm(W_old))
