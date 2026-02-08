@@ -32,15 +32,24 @@ function log_msg(io::IO, msg::String)
     println("[$t] $msg") 
 end
 
-function project_new_data(data, W_fixed, r)     
+function project_new_data(data, W_fixed, r, method; max_iter=60)
     cols = size(data, 2)
-    H_proj = rand(r, cols)
-    WtV = W_fixed' * data
-    WtW = W_fixed' * W_fixed
-    for i in 1:60
-        H_proj .= H_proj .* (WtV ./ (WtW * H_proj .+ 1e-9))
+    H_init = rand(r, cols) 
+
+    if method == :multiplicativo
+        H_proj = copy(H_init)
+        WtV = W_fixed' * data
+        WtW = W_fixed' * W_fixed
+        for i in 1:max_iter
+            H_proj .= H_proj .* (WtV ./ (WtW * H_proj .+ 1e-9))
+        end
+        return H_proj
+
+    elseif method == :lin
+        H_proj, _, _ = projected_gradient_lin_H(data, W_fixed, H_init; 
+                                                alpha_init=1.0, tol=1e-4, max_iter=max_iter)
+        return H_proj
     end
-    return H_proj
 end
 
 function main()
@@ -114,7 +123,7 @@ function main()
             log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
             log_msg(io, "STATUS: Projecting Test Data and Classifying...")
             
-            H_test = project_new_data(X_test, W_train, RANK)
+            H_test = project_new_data(X_test, W_train, RANK, method = model_sym)
 
             println(io, "")
             println(io, "=== CLASSIFICATION REPORT ===")

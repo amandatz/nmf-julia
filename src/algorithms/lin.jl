@@ -118,9 +118,9 @@ end
 # Algoritmo Principal
 # =========================================================================
 
-function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-4, log_io=stdout, log_interval=10)
+function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
     sub_max_iter = 1000
-    sub_tol = 1e-5
+    sub_tol = 1e-3
     
     m, n = size(X)
     W = copy(W_init)

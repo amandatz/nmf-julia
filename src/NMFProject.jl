@@ -12,7 +12,7 @@ const TOL_FIXED_SUB = 1e-6
 
 export generate_matrix, generate_X_WH
 export make_rule_spectral_W, make_rule_spectral_H
-export nmf_multiplicative, nmf_lin_algorithm, nmf_gradient_projected
+export nmf_multiplicative, nmf_lin_algorithm, nmf_gradient_projected, projected_gradient_lin_H
 export nmf_pca_wrapper
 
 include("utils.jl")
