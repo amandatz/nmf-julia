@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 [2026-02-08 16:59:34] SESSION_START: Face Recognition Experiment
 [2026-02-08 16:59:34] SETUP: Model=lin | Rank=40 | MaxIter=300
 [2026-02-08 16:59:34] STATUS: Starting Training Loop...
@@ -12,6 +13,22 @@
 
 [2026-02-08 16:59:41] STATUS: Training Finished. Time=7.109s
 [2026-02-08 16:59:41] STATUS: Projecting Test Data and Classifying...
+=======
+[2026-02-08 16:47:24] SESSION_START: Face Recognition Experiment
+[2026-02-08 16:47:24] SETUP: Model=lin | Rank=40 | MaxIter=300
+[2026-02-08 16:47:24] STATUS: Starting Training Loop...
+
+[16:47:24] [LIN_ALGO] Starting Optimization (MaxIter=300, Tol=0.0001)
+[16:47:24] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
+-------------------------------------------------------------------------------------
+[16:47:28] [LIN_ALGO] 0001 | 2.164913e-01 | 9.6797e-01 | 9.0177e-01 |   4.46
+[16:47:31] [LIN_ALGO] 0005 | 1.701370e-01 | 0.0000e+00 | 0.0000e+00 |   7.36
+[16:47:31] [LIN_ALGO] STOPPED at Iter 5: Converged (Delta < 0.0001)
+-------------------------------------------------------------------------------------
+
+[2026-02-08 16:47:31] STATUS: Training Finished. Time=7.363s
+[2026-02-08 16:47:31] STATUS: Projecting Test Data and Classifying...
+>>>>>>> d6e06f488192406a45962e097b2ea94c057df733
 
 === CLASSIFICATION REPORT ===
 IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
@@ -137,5 +154,10 @@ IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 119 |   40    |   40    |  1.9608  |   0280    | HIT 
 120 |   40    |   35    |  2.7858  |   0244    | MISS
 --------------------------------------------------------
+<<<<<<< HEAD
 [2026-02-08 16:59:41] SUMMARY: Accuracy=91.67% (110/120)
 [2026-02-08 16:59:41] SESSION_END
+=======
+[2026-02-08 16:47:31] SUMMARY: Accuracy=90.0% (108/120)
+[2026-02-08 16:47:31] SESSION_END
+>>>>>>> d6e06f488192406a45962e097b2ea94c057df733
