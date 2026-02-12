@@ -51,6 +51,16 @@ function nmf_multiplicative(
         deltaW = norm(W - W_old) / max(1.0, norm(W_old))
         deltaH = norm(H - H_old) / max(1.0, norm(H_old))
 
+        # --- Lógica de Parada ---
+        should_stop = false
+        if current_error < tol
+            stop_reason = "Converged (Error < $tol)"
+            should_stop = true
+        elseif deltaW < tol && deltaH < tol
+            stop_reason = "Converged (Delta < $tol)"
+            should_stop = true
+        end
+
         # --- Log Periódico ---
         if iter == 1 || iter % log_interval == 0
             t_now = Dates.format(now(), "HH:MM:SS")
@@ -60,12 +70,7 @@ function nmf_multiplicative(
             flush(log_io)
         end
 
-        # --- Critério de Parada ---
-        if deltaW < tol && deltaH < tol
-            converged = true
-            t_now = Dates.format(now(), "HH:MM:SS")
-            elapsed_total = time() - t_start
-            println(log_io, "[$t_now] [MULT_ALGO] CONVERGED at Iter $iter (Time: $(round(elapsed_total, digits=2))s)")
+        if should_stop
             break
         end
     end
