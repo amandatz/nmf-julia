@@ -168,10 +168,6 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
         end
 
         # --- LOGGING ---
-        # Imprime se:
-        # 1. É a primeira iteração
-        # 2. É uma iteração de intervalo (ex: 20, 40...)
-        # 3. OU se vai parar agora (should_stop == true) -> GARANTE A ÚLTIMA LINHA
         if iter == 1 || iter % log_interval == 0 || should_stop
              t_now_iter = Dates.format(now(), "HH:MM:SS")
              elapsed = time() - t_start

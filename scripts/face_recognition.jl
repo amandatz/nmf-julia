@@ -32,7 +32,7 @@ function log_msg(io::IO, msg::String)
     println("[$t] $msg") 
 end
 
-function project_new_data(data, W_fixed, r, method; max_iter=60)
+function project_new_data(data, W_fixed, r; method=:multiplicativo, max_iter=60)
     cols = size(data, 2)
     H_init = rand(r, cols) 
 
@@ -123,7 +123,7 @@ function main()
             log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
             log_msg(io, "STATUS: Projecting Test Data and Classifying...")
             
-            H_test = project_new_data(X_test, W_train, RANK, method = model_sym)
+            H_test = project_new_data(X_test, W_train, RANK; method=model_sym)
 
             println(io, "")
             println(io, "=== CLASSIFICATION REPORT ===")
