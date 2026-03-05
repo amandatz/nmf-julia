@@ -4,6 +4,7 @@ using LinearAlgebra
 using Plots
 using Statistics
 using Printf
+using Random
 
 try
     using Revise
@@ -26,23 +27,23 @@ function main()
         
         :lin => NMFProject.nmf_lin_algorithm,
 
-        :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
-            X, r, W, H;
-            alpha_rule_W = NMFProject.make_rule_spectral_W(),
-            alpha_rule_H = NMFProject.make_rule_spectral_H(),
-            monotone = false,
-            kwargs...
-        ),
+        # :pg_spectral_non_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
+        #     X, r, W, H;
+        #     alpha_rule_W = NMFProject.make_rule_spectral_W(),
+        #     alpha_rule_H = NMFProject.make_rule_spectral_H(),
+        #     monotone = false,
+        #     kwargs...
+        # ),
 
-        :pg_spectral_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
-            X, r, W, H;
-            alpha_rule_W = NMFProject.make_rule_spectral_W(),
-            alpha_rule_H = NMFProject.make_rule_spectral_H(),
-            monotone = true,
-            kwargs...
-        ),
+        # :pg_spectral_monotone => (X, r, W, H; kwargs...) -> NMFProject.nmf_gradient_projected(
+        #     X, r, W, H;
+        #     alpha_rule_W = NMFProject.make_rule_spectral_W(),
+        #     alpha_rule_H = NMFProject.make_rule_spectral_H(),
+        #     monotone = true,
+        #     kwargs...
+        # ),
 
-        :pca => NMFProject.nmf_pca_wrapper,
+        # :pca => NMFProject.nmf_pca_wrapper,
     )
 
     # --- CARREGAMENTO ---
@@ -57,7 +58,7 @@ function main()
     println("Matriz X: $m x $n | Rank: $rank_val")
 
     # --- EXECUÇÃO ---
-    println("Gerando W e H iniciais (comuns a todos os modelos)...")
+    println("Gerando W e H iniciais...")
     W_init_common = rand(m, rank_val)
     H_init_common = rand(rank_val, n)
 
@@ -99,8 +100,8 @@ function main()
 
         p_comp = plot(
             heatmap(X, c=:grays, yflip=true, title="Original", axis=false, legend=false, aspect_ratio=:equal),
-            heatmap(X_recon, c=:grays, yflip=true, title="Reconstrução ($model_name)\nErro: $erro_perc%", axis=false, legend=false, aspect_ratio=:equal),
-            layout=(1, 2), size=(800, 450)
+            heatmap(X_recon, c=:grays, yflip=true, title="Reconstrução ($model_name)\nErro: $erro_perc%\n", axis=false, legend=false, aspect_ratio=:equal),
+            layout=(1, 2), size=(800,450)
         )
         savefig(p_comp, joinpath(output_dir, "02_Comparacao.png"))
         

@@ -1,0 +1,110 @@
+[2026-03-05 15:41:22] === INICIANDO BATERIA DE TESTES ===
+[2026-03-05 15:41:22] SETUP:
+[2026-03-05 15:41:22]   trials = 5
+[2026-03-05 15:41:22]   dims   = [100, 200, 1000]
+[2026-03-05 15:41:22]   rank   = 10
+[2026-03-05 15:41:22]   matrix = uniform
+----------------------------------------------------------------------
+[2026-03-05 15:41:22] 
+[2026-03-05 15:41:22] >>> DIMENSÃO: 100 x 100 | rank=10
+[2026-03-05 15:41:22] Trial 1/5
+[2026-03-05 15:41:22]   Rodando algoritmo: lin
+[2026-03-05 15:41:22]     -> erro_final=5.1736e-01 | tempo=0.0170s | iter=11
+[2026-03-05 15:41:22]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:22]     -> erro_final=5.1461e-01 | tempo=0.0410s | iter=277
+[2026-03-05 15:41:22] Trial 2/5
+[2026-03-05 15:41:22]   Rodando algoritmo: lin
+[2026-03-05 15:41:22]     -> erro_final=5.1747e-01 | tempo=0.0060s | iter=10
+[2026-03-05 15:41:22]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:22]     -> erro_final=5.1206e-01 | tempo=0.0300s | iter=258
+[2026-03-05 15:41:22] Trial 3/5
+[2026-03-05 15:41:22]   Rodando algoritmo: lin
+[2026-03-05 15:41:22]     -> erro_final=5.1817e-01 | tempo=0.0110s | iter=9
+[2026-03-05 15:41:22]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:22]     -> erro_final=5.1381e-01 | tempo=0.0240s | iter=265
+[2026-03-05 15:41:22] Trial 4/5
+[2026-03-05 15:41:22]   Rodando algoritmo: lin
+[2026-03-05 15:41:22]     -> erro_final=5.1906e-01 | tempo=0.0070s | iter=12
+[2026-03-05 15:41:22]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.1407e-01 | tempo=0.0410s | iter=457
+[2026-03-05 15:41:23] Trial 5/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:23]     -> erro_final=5.2067e-01 | tempo=0.0110s | iter=11
+[2026-03-05 15:41:23]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.1542e-01 | tempo=0.0280s | iter=327
+----------------------------------------------------------------------
+[2026-03-05 15:41:23] Resumo médio para n=100 (rank=10):
+ALGORITMO                      | ERRO MÉDIO   | TEMPO MÉDIO | ITER MÉDIA
+----------------------------------------------------------------------
+[2026-03-05 15:41:23] lin                            | 5.1855e-01 | 0.0104s | 10.6
+[2026-03-05 15:41:23] multiplicativo                 | 5.1400e-01 | 0.0328s | 316.8
+----------------------------------------------------------------------
+[2026-03-05 15:41:23] 
+[2026-03-05 15:41:23] >>> DIMENSÃO: 200 x 200 | rank=10
+[2026-03-05 15:41:23] Trial 1/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:23]     -> erro_final=5.5840e-01 | tempo=0.0190s | iter=12
+[2026-03-05 15:41:23]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.5652e-01 | tempo=0.1040s | iter=318
+[2026-03-05 15:41:23] Trial 2/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:23]     -> erro_final=5.5601e-01 | tempo=0.0140s | iter=12
+[2026-03-05 15:41:23]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.5404e-01 | tempo=0.0940s | iter=309
+[2026-03-05 15:41:23] Trial 3/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:23]     -> erro_final=5.5408e-01 | tempo=0.0130s | iter=12
+[2026-03-05 15:41:23]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.5322e-01 | tempo=0.0900s | iter=256
+[2026-03-05 15:41:23] Trial 4/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:23]     -> erro_final=5.5570e-01 | tempo=0.0210s | iter=16
+[2026-03-05 15:41:23]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.5492e-01 | tempo=0.1070s | iter=295
+[2026-03-05 15:41:23] Trial 5/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:23]     -> erro_final=5.5352e-01 | tempo=0.0200s | iter=12
+[2026-03-05 15:41:23]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:23]     -> erro_final=5.5260e-01 | tempo=0.0790s | iter=251
+----------------------------------------------------------------------
+[2026-03-05 15:41:23] Resumo médio para n=200 (rank=10):
+ALGORITMO                      | ERRO MÉDIO   | TEMPO MÉDIO | ITER MÉDIA
+----------------------------------------------------------------------
+[2026-03-05 15:41:23] lin                            | 5.5554e-01 | 0.0174s | 12.8
+[2026-03-05 15:41:23] multiplicativo                 | 5.5426e-01 | 0.0948s | 285.8
+----------------------------------------------------------------------
+[2026-03-05 15:41:23] 
+[2026-03-05 15:41:23] >>> DIMENSÃO: 1000 x 1000 | rank=10
+[2026-03-05 15:41:23] Trial 1/5
+[2026-03-05 15:41:23]   Rodando algoritmo: lin
+[2026-03-05 15:41:24]     -> erro_final=5.9543e-01 | tempo=0.1240s | iter=5
+[2026-03-05 15:41:24]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:28]     -> erro_final=5.9317e-01 | tempo=4.0630s | iter=289
+[2026-03-05 15:41:28] Trial 2/5
+[2026-03-05 15:41:28]   Rodando algoritmo: lin
+[2026-03-05 15:41:28]     -> erro_final=5.9554e-01 | tempo=0.4300s | iter=5
+[2026-03-05 15:41:28]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:32]     -> erro_final=5.9349e-01 | tempo=3.9870s | iter=301
+[2026-03-05 15:41:32] Trial 3/5
+[2026-03-05 15:41:33]   Rodando algoritmo: lin
+[2026-03-05 15:41:33]     -> erro_final=5.9521e-01 | tempo=0.1690s | iter=4
+[2026-03-05 15:41:33]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:38]     -> erro_final=5.9300e-01 | tempo=4.7600s | iter=300
+[2026-03-05 15:41:38] Trial 4/5
+[2026-03-05 15:41:38]   Rodando algoritmo: lin
+[2026-03-05 15:41:39]     -> erro_final=5.9547e-01 | tempo=0.5950s | iter=4
+[2026-03-05 15:41:39]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:43]     -> erro_final=5.9316e-01 | tempo=3.9690s | iter=309
+[2026-03-05 15:41:43] Trial 5/5
+[2026-03-05 15:41:43]   Rodando algoritmo: lin
+[2026-03-05 15:41:43]     -> erro_final=5.9578e-01 | tempo=0.1110s | iter=4
+[2026-03-05 15:41:43]   Rodando algoritmo: multiplicativo
+[2026-03-05 15:41:47]     -> erro_final=5.9333e-01 | tempo=3.3450s | iter=309
+----------------------------------------------------------------------
+[2026-03-05 15:41:47] Resumo médio para n=1000 (rank=10):
+ALGORITMO                      | ERRO MÉDIO   | TEMPO MÉDIO | ITER MÉDIA
+----------------------------------------------------------------------
+[2026-03-05 15:41:47] lin                            | 5.9549e-01 | 0.2858s | 4.4
+[2026-03-05 15:41:47] multiplicativo                 | 5.9323e-01 | 4.0248s | 301.6
+----------------------------------------------------------------------
+[2026-03-05 15:41:47] === FINALIZADO ===
