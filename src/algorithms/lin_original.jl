@@ -4,9 +4,7 @@
 
 function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
     W = copy(W0)
-    alpha = alpha_init
-    beta = 0.1
-    sigma = 0.01
+    alpha = 1.0  # sempre local
 
     HHt = H * H'
     XHt = X * H'
@@ -15,44 +13,43 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
     for iter = 1:max_iter
         inner_iter = iter
         G = W * HHt .- XHt
+
+        # critério de parada: gradiente projetado
+        projgrad = norm(G[G .< 0 .|| W .> 0])
+        if projgrad < tol
+            break
+        end
+
         W_old = copy(W)
+        Wp = copy(W)
+        decr_alpha = true
 
-        W_cand = max.(W_old .- alpha .* G, 0.0)
-        d = W_cand .- W_old
-        normd = norm(d)
-        
-        if normd / max(1.0, norm(W_old)) < tol
-            break
-        end
-        
-        suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, d*HHt) <= 0
+        Wn = max.(W .- alpha .* G, 0.0)
+        d = Wn .- W
+        gradd = dot(G, d)
+        dQd = dot(d, d * HHt)
+        suff_decr = 0.99 * gradd + 0.5 * dQd < 0
+        decr_alpha = !suff_decr
 
-        if suff_decr
-            while suff_decr
-                W = copy(W_cand)
-                alpha /= beta
-                W_cand = max.(W_old .- alpha .* G, 0.0)
-                if norm(W - W_cand) <= tol 
-                    break
+        for inner_iter = 1:20
+            if decr_alpha
+                if suff_decr
+                    W = Wn; break
+                else
+                    alpha *= 0.1
                 end
-                d = W_cand .- W_old
-                suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, d*HHt) <= 0
-                if alpha > 1e10; break; end
+            else
+                if !suff_decr || Wp == Wn
+                    W = Wp; break
+                else
+                    alpha /= 0.1; Wp = copy(Wn)
+                end
             end
-            alpha *= beta
-        else
-            while !suff_decr
-                alpha *= beta
-                W_cand = max.(W_old .- alpha .* G, 0.0)
-                d = W_cand .- W_old
-                suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, d*HHt) <= 0
-                if alpha < 1e-10; break; end
-            end
-            W .= W_cand
-        end
-        
-        if norm(W - W_old) / max(1.0, norm(W_old)) < tol
-            break
+            Wn = max.(W .- alpha .* G, 0.0)
+            d = Wn .- W
+            gradd = dot(G, d)
+            dQd = dot(d, d * HHt)
+            suff_decr = 0.99 * gradd + 0.5 * dQd < 0
         end
     end
     return W, inner_iter, alpha
@@ -60,9 +57,7 @@ end
 
 function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
     H = copy(H0)
-    alpha = alpha_init
-    beta = 0.1
-    sigma = 0.01
+    alpha = 1.0  # sempre local, não reutilizar
 
     WtW = W' * W
     WtX = W' * X
@@ -71,44 +66,43 @@ function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_it
     for iter = 1:max_iter
         inner_iter = iter
         G = WtW * H .- WtX
+
+        # critério de parada: gradiente projetado (Lin 2007)
+        projgrad = norm(G[G .< 0 .|| H .> 0])
+        if projgrad < tol
+            break
+        end
+
         H_old = copy(H)
+        Hp = copy(H)
+        decr_alpha = true
 
-        H_cand = max.(H_old .- alpha .* G, 0.0)
-        d = H_cand .- H_old
-        normd = norm(d)
-        
-        if normd / max(1.0, norm(H_old)) < tol
-            break
-        end
-        
-        suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, WtW*d) <= 0
+        Hn = max.(H .- alpha .* G, 0.0)
+        d = Hn .- H
+        gradd = dot(G, d)
+        dQd = dot(d, WtW * d)
+        suff_decr = 0.99 * gradd + 0.5 * dQd < 0
+        decr_alpha = !suff_decr
 
-        if suff_decr
-            while suff_decr
-                H = copy(H_cand)
-                alpha /= beta
-                H_cand = max.(H_old .- alpha .* G, 0.0)
-                if norm(H - H_cand) <= tol 
-                    break
+        for inner_iter = 1:20
+            if decr_alpha
+                if suff_decr
+                    H = Hn; break
+                else
+                    alpha *= 0.1
                 end
-                d = H_cand .- H_old
-                suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, WtW*d) <= 0
-                if alpha > 1e10; break; end
+            else
+                if !suff_decr || Hp == Hn
+                    H = Hp; break
+                else
+                    alpha /= 0.1; Hp = copy(Hn)
+                end
             end
-            alpha *= beta
-        else
-            while !suff_decr
-                alpha *= beta
-                H_cand = max.(H_old .- alpha .* G, 0.0)
-                d = H_cand .- H_old
-                suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, WtW*d) <= 0
-                if alpha < 1e-10; break; end
-            end
-            H .= H_cand
-        end
-
-        if norm(H - H_old) / max(1.0, norm(H_old)) < tol
-            break
+            Hn = max.(H .- alpha .* G, 0.0)
+            d = Hn .- H
+            gradd = dot(G, d)
+            dQd = dot(d, WtW * d)
+            suff_decr = 0.99 * gradd + 0.5 * dQd < 0
         end
     end
     return H, inner_iter, alpha
@@ -119,7 +113,7 @@ end
 # =========================================================================
 
 function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
-    sub_max_iter = 1000
+    sub_max_iter = 50
     sub_tol = 1e-3
     
     m, n = size(X)
@@ -131,15 +125,11 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
     alpha_W = 1.0
     alpha_H = 1.0
 
-    W_max = norm(X) / r
-
-    # normalização inicial para satisfazer W <= W_max
     for a in 1:r
-        excess = maximum(W[:, a]) / W_max
-        if excess > 1.0
-            W[:, a] ./= excess
-            H[a, :] .*= excess
-        end
+        d = sum(W[:, a])
+        d = d > 0 ? d : 1.0
+        W[:, a] ./= d
+        H[a, :] .*= d
     end
     
     t_now = Dates.format(now(), "HH:MM:SS")
@@ -154,23 +144,21 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
     for iter = 1:max_iter
         final_iter = iter 
         W_old = copy(W)
-        H_old = copy(H)
 
-        W, iter_W, alpha_W = projected_gradient_lin_W(X, H, W; alpha_init=alpha_W, tol=sub_tol, max_iter=sub_max_iter)
+        W, iter_W, _ = projected_gradient_lin_W(X, H, W; alpha_init=alpha_W, tol=sub_tol, max_iter=sub_max_iter)
         total_sub_iters += iter_W
 
-        # transfere excesso de W para H, preservando WH
+        # Normaliza colunas de W e reescala linhas de H
         for a in 1:r
-            excess = maximum(W[:, a]) / W_max
-            if excess > 1.0
-                W[:, a] ./= excess
-                H[a, :] .*= excess
-            end
+            d = sum(W[:, a])
+            d = d > 0 ? d : 1.0
+            W[:, a] ./= d
+            H[a, :] .*= d
         end
 
-        H_old = copy(H)  # salva depois da transferência
+        H_old = copy(H)
 
-        H, iter_H, alpha_H = projected_gradient_lin_H(X, W, H; alpha_init=alpha_H, tol=sub_tol, max_iter=sub_max_iter)
+        H, iter_H, _ = projected_gradient_lin_H(X, W, H; alpha_init=alpha_H, tol=sub_tol, max_iter=sub_max_iter)
         total_sub_iters += iter_H
 
         current_error = norm(X - W * H) / max(1.0, norm(X))
@@ -198,7 +186,9 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
              flush(log_io)
         end
 
-        if should_stop; break; end
+        if should_stop
+            break
+        end
     end
     
     t_now_end = Dates.format(now(), "HH:MM:SS")

@@ -20,7 +20,7 @@ using .NMFProject
 # =========================================================================
 
 const DATA_PATH = joinpath(@__DIR__, "..", "data", "att_face_dataset")
-const RANK      = 40
+const RANK      = 25
 const MAX_ITER  = 500
 const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7 
@@ -116,7 +116,7 @@ function main()
                 X_train, RANK,
                 copy(W_init_common), copy(H_init_common);
                 max_iter=MAX_ITER, tol=TOL,
-                log_io=io, log_interval=20 
+                log_io=io, log_interval=10 
             )
 
             println(io, "")

@@ -1,9 +1,15 @@
-using Pkg; Pkg.activate(".") 
+using Pkg; Pkg.activate(".")
+Pkg.add("Revise")
 using LinearAlgebra
 using Statistics
 using Printf
 using Random
 using Dates
+
+try
+    using Revise
+catch
+end
 
 includet("../src/NMFProject.jl")
 using .NMFProject
@@ -11,7 +17,7 @@ using .NMFProject
 function log_msg(io::IO, msg::String)
     t = Dates.format(now(), "yyyy-mm-dd HH:MM:SS")
     println(io, "[$t] $msg")
-    println("[$t] $msg") 
+    println("[$t] $msg")
 end
 
 function relative_error(X, W, H)
@@ -45,6 +51,7 @@ function main()
     num_trials = 20
 
     dims = [100,200,1000]
+    # dims = [100]
     ranks = [5,10,20]
 
     types = [:uniform, :decaying, :equal, :ill_conditioned]
