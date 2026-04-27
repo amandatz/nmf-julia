@@ -4,49 +4,125 @@ using Printf
 using Dates
 
 # ==========================================================
-# Subproblemas (W e H)
+# Regras de Alpha (Barzilai-Borwein)
 # ==========================================================
 
-function projected_gradient_W(X, H, W0; alpha_init=1e-3, lambda=0.0, tol=1e-6, max_iter=500, monotone=true, alpha_rule_W=(args...)->args[5])
+function make_rule_spectral_W()
+    prev_W = nothing
+    prev_G = nothing
+    return (W, G, alpha_prev) -> begin
+        alpha = alpha_prev
+        if prev_W !== nothing && prev_G !== nothing
+            s = W .- prev_W
+            y = G .- prev_G
+            den = sum(s .* y)
+            if den > 1e-12 && isfinite(den)
+                # Passo espectral BB1
+                alpha = clamp(sum(s .* s) / den, 1e-10, 1.0)
+            end
+        end
+        prev_W = copy(W)
+        prev_G = copy(G)
+        return alpha
+    end
+end
+
+function make_rule_spectral_H()
+    prev_H = nothing
+    prev_G = nothing
+    return (H, G, alpha_prev) -> begin
+        alpha = alpha_prev
+        if prev_H !== nothing && prev_G !== nothing
+            s = H .- prev_H
+            y = G .- prev_G
+            den = sum(s .* y)
+            if den > 1e-12 && isfinite(den)
+                # Passo espectral BB1
+                alpha = clamp(sum(s .* s) / den, 1e-10, 1.0)
+            end
+        end
+        prev_H = copy(H)
+        prev_G = copy(G)
+        return alpha
+    end
+end
+
+# ==========================================================
+# Subproblemas Otimizados
+# ==========================================================
+
+function projected_gradient_W(XHt, HHt, W0; alpha_init=1.0, lambda=0.0, tol=1e-4, max_iter=50, alpha_rule_W=(args...)->args[3])
     W = copy(W0)
     alpha = alpha_init
-    f_W(Wt, Ht) = 0.5 * norm(X - Wt*Ht)^2 + (lambda/2)*norm(Wt)^2
-    f_hist_W = nothing
-
+    
     for iter = 1:max_iter
         W_old = copy(W)
-        GW = W * (H * H') .- X * H' .+ lambda .* W
-        alpha = alpha_rule_W(W, H, GW, iter, alpha)
-        
-        W .= max.(W .- alpha .* GW, 0.0)
+        # G = W*HHt - XHt + lambda*W
+        G = W * HHt .- XHt
+        if lambda > 0; G .+= lambda .* W; end
 
-        # Line Search
-        W, _, f_hist_W = line_search_segment!(W_old, W, GW, H, f_W; monotone=monotone, f_hist=f_hist_W)
-        
-        if norm(W - W_old)/max(1.0, norm(W_old)) < tol
+        # Sugestão de Alpha via BB
+        alpha = alpha_rule_W(W, G, alpha)
+
+        # Busca de linha Armijo Quadrática (Custo O(m * r^2))
+        # Não toca na matriz X, usa apenas HHt
+        while true
+            W_new = max.(W .- alpha .* G, 0.0)
+            d = W_new .- W
+            
+            gradd = dot(G, d)
+            # Cálculo eficiente de d' * HHt * d usando propriedades de traço
+            dQd = sum((d * HHt) .* d) 
+            
+            # Condição de Armijo para função quadrática: f(x+d) <= f(x) + sigma * grad'd
+            # Aqui simplificamos usando a curvatura exata dQd
+            if 0.5 * dQd + gradd <= 0
+                W .= W_new
+                break
+            end
+            
+            alpha *= 0.5
+            if alpha < 1e-12; break; end
+        end
+
+        if norm(W .- W_old) / max(1.0, norm(W_old)) < tol
             return W, iter, alpha
         end
     end
     return W, max_iter, alpha
 end
 
-function projected_gradient_H(X, W, H0; alpha_init=1e-3, lambda=0.0, tol=1e-6, max_iter=1000, monotone=true, alpha_rule_H=(args...)->args[5])
+function projected_gradient_H(WtX, WtW, H0; alpha_init=1.0, lambda=0.0, tol=1e-4, max_iter=50, alpha_rule_H=(args...)->args[3])
     H = copy(H0)
     alpha = alpha_init
-    f_H(Ht, Wt) = 0.5 * norm(X - Wt*Ht)^2 + (lambda/2)*norm(Ht)^2
-    f_hist_H = nothing
-
+    
     for iter = 1:max_iter
         H_old = copy(H)
-        GH = (W' * W) * H .- W' * X .+ lambda .* H
-        alpha = alpha_rule_H(W, H, GH, iter, alpha)
-        
-        H .= max.(H .- alpha .* GH, 0.0)
+        # G = WtW*H - WtX + lambda*H
+        G = WtW * H .- WtX
+        if lambda > 0; G .+= lambda .* H; end
 
-        # Line Search
-        H, _, f_hist_H = line_search_segment!(H_old, H, GH, W, f_H; monotone=monotone, f_hist=f_hist_H)
+        # Sugestão de Alpha via BB
+        alpha = alpha_rule_H(H, G, alpha)
 
-        if norm(H - H_old)/max(1.0, norm(H_old)) < tol
+        while true
+            H_new = max.(H .- alpha .* G, 0.0)
+            d = H_new .- H
+            
+            gradd = dot(G, d)
+            # Cálculo eficiente de d' * WtW * d
+            dQd = sum((WtW * d) .* d)
+            
+            if 0.5 * dQd + gradd <= 0
+                H .= H_new
+                break
+            end
+            
+            alpha *= 0.5
+            if alpha < 1e-12; break; end
+        end
+
+        if norm(H .- H_old) / max(1.0, norm(H_old)) < tol
             return H, iter, alpha
         end
     end
@@ -58,87 +134,106 @@ end
 # ==========================================================
 
 function nmf_gradient_projected(X, r, W_init, H_init; 
-                                max_iter=200, 
+                                max_iter=500, 
                                 tol=1e-4, 
-                                sub_tol=1e-3, 
-                                sub_max_iter=200, 
-                                monotone=true, 
-                                alpha_rule_W=(args...)->args[5], 
-                                alpha_rule_H=(args...)->args[5],
-                                alpha_init=1e-3,
+                                sub_tol=1e-4, 
+                                sub_max_iter=20, 
+                                alpha_rule_W=(args...)->args[3], 
+                                alpha_rule_H=(args...)->args[3],
+                                alpha_init=1.0,
                                 lambda=0.0,
                                 log_io::IO = stdout,
                                 log_interval::Int = 10,
                                 kwargs...)
     
-    W = copy(W_init); H = copy(H_init)
+    W = copy(W_init)
+    H = copy(H_init)
     errors = Float64[]
     t_start = time()
     total_sub = 0
 
-    # Inicializa variaveis de alpha para log
     curr_alpha_W = alpha_init
     curr_alpha_H = alpha_init
+    
+    # Pré-calculo constante para critério de erro relativo
+    norm_X = norm(X)
+    norm_X2 = norm_X^2
 
-    # --- CABEÇALHO DO LOG ---
-    timestamp = Dates.format(now(), "HH:MM:SS")
-    println(log_io, "[$timestamp] [PG_ALGO] Starting Projected Gradient Optimization")
-    println(log_io, "[$timestamp] [PG_ALGO] Config: MaxIter=$max_iter | Tol=$tol | Monotone=$monotone")
-    println(log_io, "[$timestamp] [PG_ALGO] SubConfig: SubMaxIter=$sub_max_iter | SubTol=$sub_tol")
-    println(log_io, "[$timestamp] [PG_ALGO] ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | ITER_SUB_W | ITER_SUB_H | TIME(s)")
-    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
-
-    converged = false
-
-    for iter = 1:max_iter
-        W_old = copy(W); H_old = copy(H)
-
-        # Subproblema W
-        W, iW, curr_alpha_W = projected_gradient_W(X, H, W; 
-            tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, 
-            alpha_rule_W=alpha_rule_W, alpha_init=alpha_init, lambda=lambda)
-        total_sub += iW
-        
-        # Subproblema H
-        H, iH, curr_alpha_H = projected_gradient_H(X, W, H; 
-            tol=sub_tol, max_iter=sub_max_iter, monotone=monotone, 
-            alpha_rule_H=alpha_rule_H, alpha_init=alpha_init, lambda=lambda)
-        total_sub += iH
-
-        # Métricas
-        current_error = norm(X - W * H) / max(1.0, norm(X))
-        push!(errors, current_error)
-
-        deltaW = norm(W - W_old)/max(1, norm(W_old))
-        deltaH = norm(H - H_old)/max(1, norm(H_old))
-
-        # --- Log Periódico ---
-        if iter == 1 || iter % log_interval == 0
-            t_now = Dates.format(now(), "HH:MM:SS")
-            elapsed_iter = time() - t_start # Calcula tempo decorrido até agora
-
-            @printf(log_io, "[%s] [PG_ALGO] %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %03d  |  %03d  | %6.2f\n", 
-                    t_now, iter, current_error, deltaW, deltaH, curr_alpha_W, curr_alpha_H, iW, iH, elapsed_iter)
-            flush(log_io)
-        end
-
-        # Critério de Parada
-        if deltaW < tol && deltaH < tol
-            converged = true
-            t_now = Dates.format(now(), "HH:MM:SS")
-            elapsed_total = time() - t_start
-            println(log_io, "[$t_now] [PG_ALGO] CONVERGED at Iter $iter (Time: $(round(elapsed_total, digits=2))s)")
-            break
+    # Normalização inicial (Cota de Lin)
+    W_max = norm_X / r
+    for a in 1:r
+        excess = maximum(W[:, a]) / W_max
+        if excess > 1.0
+            W[:, a] ./= excess
+            H[a, :] .*= excess
         end
     end
 
-    if !converged
-        t_now = Dates.format(now(), "HH:MM:SS")
-        println(log_io, "[$t_now] [PG_ALGO] STOPPED: Max Iterations Reached")
+    timestamp = Dates.format(now(), "HH:MM:SS")
+    @printf(log_io, "[%s] [PG_ALGO] Optimization Started (Fast Mode)\n", timestamp)
+    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
+    println(log_io, " ITER |  RECON_ERROR  |   DELTA_W  |   DELTA_H  |  ALPHA_W |  ALPHA_H | SUB_W | SUB_H | TIME(s)")
+    println(log_io, "--------------------------------------------------------------------------------------------------------------------")
+
+    for iter = 1:max_iter
+        W_old = copy(W)
+        
+        # Pré-computação para subproblema W (O(n * r^2))
+        HHt = H * H'
+        XHt = X * H'
+
+        W, iW, curr_alpha_W = projected_gradient_W(XHt, HHt, W; 
+            tol=sub_tol, max_iter=sub_max_iter,
+            alpha_rule_W=alpha_rule_W, alpha_init=curr_alpha_W, lambda=lambda)
+        total_sub += iW
+
+        # Transferência de escala (Invariância WH)
+        for a in 1:r
+            excess = maximum(W[:, a]) / W_max
+            if excess > 1.0
+                W[:, a] ./= excess
+                H[a, :] .*= excess
+            end
+        end
+
+        H_old = copy(H)
+        
+        # Pré-computação para subproblema H (O(m * r^2))
+        WtW = W' * W
+        WtX = W' * X
+
+        H, iH, curr_alpha_H = projected_gradient_H(WtX, WtW, H; 
+            tol=sub_tol, max_iter=sub_max_iter,
+            alpha_rule_H=alpha_rule_H, alpha_init=curr_alpha_H, lambda=lambda)
+        total_sub += iH
+
+        # Cálculo do Erro Global (Apenas nos intervalos de log para poupar O(mnr))
+        deltaW = norm(W .- W_old) / max(1.0, norm(W_old))
+        deltaH = norm(H .- H_old) / max(1.0, norm(H_old))
+        
+        # Parada antecipada
+        if deltaW < tol && deltaH < tol
+            # Cálculo final do erro para o log
+            current_error = norm(X - W * H) / norm_X
+            t_now = Dates.format(now(), "HH:MM:SS")
+            @printf(log_io, "[%s] [PG_ALGO] %04d | %.6e | %.4e | %.4e | CONVERGED\n", t_now, iter, current_error, deltaW, deltaH)
+            break
+        end
+
+        if iter == 1 || iter % log_interval == 0
+            current_error = norm(X - W * H) / norm_X
+            push!(errors, current_error)
+            t_now = Dates.format(now(), "HH:MM:SS")
+            elapsed = time() - t_start
+            @printf(log_io, " %04d | %.6e | %.4e | %.4e | %.2e | %.2e |  %02d   |  %02d   | %6.2f\n", 
+                    iter, current_error, deltaW, deltaH, curr_alpha_W, curr_alpha_H, iW, iH, elapsed)
+            flush(log_io)
+        end
     end
 
     elapsed = time() - t_start
     println(log_io, "--------------------------------------------------------------------------------------------------------------------")
+    @printf(log_io, "Finalized in %.2fs. Total sub-iterations: %d\n", elapsed, total_sub)
 
     return W, H, errors, elapsed, total_sub
 end

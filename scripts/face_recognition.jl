@@ -49,14 +49,27 @@ function project_new_data(data, W_fixed, r; method=:multiplicativo, max_iter=60)
         H_proj, _, _ = projected_gradient_lin_H(data, W_fixed, H_init; 
                                                 alpha_init=1.0, tol=1e-4, max_iter=max_iter)
         return H_proj
+    
+    elseif method == :pg_spectral
+        H_proj, _, _ = projected_gradient_H(data, W_fixed, H_init;
+                                            alpha_init=1e-3, tol=1e-4, max_iter=max_iter,
+                                            alpha_rule_H=make_rule_spectral_H())
+        return H_proj
     end
 end
 
 function main()
-    models = [
-        :lin => nmf_lin_algorithm, 
-        :multiplicativo => NMFProject.nmf_multiplicative
-    ]
+    models = Dict{Symbol, Function}(
+        # :multiplicativo => nmf_multiplicative,
+        # :lin            => nmf_lin_algorithm,
+
+        :pg_spectral => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
+            X, r, W, H;
+            alpha_rule_W = make_rule_spectral_W(),
+            alpha_rule_H = make_rule_spectral_H(),
+            kwargs...
+        ),
+    )
 
     println("--- Carregando Dataset ---")
     train_matrix = []

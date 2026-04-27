@@ -10,7 +10,7 @@ function make_rule_spectral_W()
             y = G .- prev_G
             den = sum(s .* y)
             if den > 0 && isfinite(den)
-                alpha = clamp(sum(s .* s) / den, 1e-12, 1e12)
+                alpha = clamp(sum(s .* s) / den, 1e-8, 1e-2)
             end
         end
         prev_W, prev_G = copy(W), copy(G)
@@ -29,7 +29,7 @@ function make_rule_spectral_H()
             y = G .- prev_G
             den = sum(s .* y)
             if den > 0 && isfinite(den)
-                alpha = clamp(sum(s .* s) / den, 1e-12, 1e12)
+                alpha = clamp(sum(s .* s) / den, 1e-8, 1e-2)
             end
         end
         prev_H, prev_G = copy(H), copy(G)
