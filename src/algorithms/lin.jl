@@ -2,7 +2,7 @@
 # Funções de Otimização
 # =========================================================================
 
-function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
+function projected_gradient_lin_W(X, H, W0, W_max; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
     W = copy(W0)
     alpha = alpha_init
     beta = 0.1
@@ -10,6 +10,8 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
 
     HHt = H * H'
     XHt = X * H'
+
+    # colocar dentro de 0 e W_max
 
     inner_iter = 0
     for iter = 1:max_iter
@@ -58,7 +60,7 @@ function projected_gradient_lin_W(X, H, W0; alpha_init = 1.0, tol = 1e-4, max_it
     return W, inner_iter, alpha
 end
 
-function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
+function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
     H = copy(H0)
     alpha = alpha_init
     beta = 0.1
@@ -66,6 +68,8 @@ function projected_gradient_lin_H(X, W, H0; alpha_init = 1.0, tol = 1e-4, max_it
 
     WtW = W' * W
     WtX = W' * X
+
+    # colocar dentro de 0 e H_max
 
     inner_iter = 0
     for iter = 1:max_iter
@@ -133,14 +137,14 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
 
     W_max = norm(X) / r
 
-    # normalização inicial para satisfazer W <= W_max
-    for a in 1:r
-        excess = maximum(W[:, a]) / W_max
-        if excess > 1.0
-            W[:, a] ./= excess
-            H[a, :] .*= excess
-        end
-    end
+    # # normalização inicial para satisfazer W <= W_max
+    # for a in 1:r
+    #     excess = maximum(W[:, a]) / W_max
+    #     if excess > 1.0
+    #         W[:, a] ./= excess
+    #         H[a, :] .*= excess
+    #     end
+    # end
     
     t_now = Dates.format(now(), "HH:MM:SS")
     println(log_io, "") 
@@ -151,26 +155,29 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
     final_iter = 0
     stop_reason = "Max Iterations Reached"
 
+    W_max = 
+    H_max = 
+
     for iter = 1:max_iter
         final_iter = iter 
         W_old = copy(W)
         H_old = copy(H)
 
-        W, iter_W, alpha_W = projected_gradient_lin_W(X, H, W; alpha_init=alpha_W, tol=sub_tol, max_iter=sub_max_iter)
+        W, iter_W, alpha_W = projected_gradient_lin_W(X, H, W, W_max; alpha_init=alpha_W, tol=sub_tol, max_iter=sub_max_iter)
         total_sub_iters += iter_W
 
-        # transfere excesso de W para H, preservando WH
-        for a in 1:r
-            excess = maximum(W[:, a]) / W_max
-            if excess > 1.0
-                W[:, a] ./= excess
-                H[a, :] .*= excess
-            end
-        end
+        # # transfere excesso de W para H, preservando WH
+        # for a in 1:r
+        #     excess = maximum(W[:, a]) / W_max
+        #     if excess > 1.0
+        #         W[:, a] ./= excess
+        #         H[a, :] .*= excess
+        #     end
+        # end
 
         H_old = copy(H)  # salva depois da transferência
 
-        H, iter_H, alpha_H = projected_gradient_lin_H(X, W, H; alpha_init=alpha_H, tol=sub_tol, max_iter=sub_max_iter)
+        H, iter_H, alpha_H = projected_gradient_lin_H(X, W, H, H_max; alpha_init=alpha_H, tol=sub_tol, max_iter=sub_max_iter)
         total_sub_iters += iter_H
 
         current_error = norm(X - W * H) / max(1.0, norm(X))
