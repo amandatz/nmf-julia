@@ -117,10 +117,11 @@ function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4,
 end
 
 # =========================================================================
-# Algoritmo Principal (com cálculo das cotas baseado nas normas iniciais)
+# Execução interna (com cotas fixas)
 # =========================================================================
 
-function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
+function _run_nmf_lin_fixed_cotas(X, r, W_init, H_init, W_max, H_max; 
+                                  max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
     sub_max_iter = 50
     sub_tol = 1e-3
     
@@ -133,33 +134,11 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
     alpha_W = 1.0
     alpha_H = 1.0
 
-    # --- Definição das cotas superiores (Seção 3.2) ---
-    # Calcula min_a ||h_{a·}^0||_2 e min_a ||w_{·a}^0||_2
-    min_row_H0 = minimum([norm(H[a,:]) for a in 1:r])
-    min_col_W0 = minimum([norm(W[:,a]) for a in 1:r])
-    # Evita divisão por zero (inicializações positivas garantem >0)
-    if min_row_H0 == 0.0
-        min_row_H0 = 1.0
-    end
-    if min_col_W0 == 0.0
-        min_col_W0 = 1.0
-    end
-    # Cotas teóricas
-    W_max = (sqrt(n) * norm(X, Inf)) / min_row_H0
-    H_max = (sqrt(m) * norm(X, Inf)) / min_col_W0
-    # Fallback para evitar valores não finitos ou muito pequenos
-    if !isfinite(W_max) || W_max < norm(X)/r
-        W_max = norm(X) / r
-    end
-    if !isfinite(H_max) || H_max < norm(X)/r
-        H_max = norm(X) / r
-    end
-
     t_now = Dates.format(now(), "HH:MM:SS")
     println(log_io, "") 
-    println(log_io, "[$t_now] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol)")
-    println(log_io, "[$t_now] [LIN_ALGO] W_max = $W_max, H_max = $H_max")
-    println(log_io, "[$t_now] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)")
+    println(log_io, "[$t_now] [LIN_FIXED] Starting Optimization (MaxIter=$max_iter, Tol=$tol)")
+    println(log_io, "[$t_now] [LIN_FIXED] W_max = $W_max, H_max = $H_max")
+    println(log_io, "[$t_now] [LIN_FIXED] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)")
     println(log_io, "-------------------------------------------------------------------------------------")
 
     final_iter = 0
@@ -182,31 +161,109 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
         deltaW = norm(W - W_old) / max(1.0, norm(W_old))
         deltaH = norm(H - H_old) / max(1.0, norm(H_old))
 
-        # Lógica de Parada
-        should_stop = false
         if current_error < tol
             stop_reason = "Converged (Error < $tol)"
-            should_stop = true
+            break
         elseif deltaW < tol && deltaH < tol
             stop_reason = "Converged (Delta < $tol)"
-            should_stop = true
+            break
         end
 
-        # Logging
-        if iter == 1 || iter % log_interval == 0 || should_stop
+        if iter == 1 || iter % log_interval == 0
              t_now_iter = Dates.format(now(), "HH:MM:SS")
              elapsed = time() - t_start
-             @printf(log_io, "[%s] [LIN_ALGO] %04d | %.6e | %.4e | %.4e | %6.2f\n", 
+             @printf(log_io, "[%s] [LIN_FIXED] %04d | %.6e | %.4e | %.4e | %6.2f\n", 
                      t_now_iter, iter, current_error, deltaW, deltaH, elapsed)
              flush(log_io)
         end
-
-        if should_stop; break; end
     end
     
+    # Contagem de entradas que tocaram a fronteira superior
+    tol_bound = 1e-12
+    hit_W = count(x -> x >= W_max - tol_bound, W)
+    hit_H = count(x -> x >= H_max - tol_bound, H)
+    
     t_now_end = Dates.format(now(), "HH:MM:SS")
-    println(log_io, "[$t_now_end] [LIN_ALGO] STOPPED at Iter $final_iter: $stop_reason")
+    println(log_io, "[$t_now_end] [LIN_FIXED] STOPPED at Iter $final_iter: $stop_reason")
     println(log_io, "-------------------------------------------------------------------------------------")
     
-    return W, H, errors, time() - t_start, total_sub_iters
+    return W, H, errors, time() - t_start, total_sub_iters, hit_W, hit_H
+end
+
+# =========================================================================
+# Algoritmo Principal com adaptação de cotas (aumento e reinício)
+# =========================================================================
+
+function nmf_lin_algorithm(X, r, W_init, H_init; 
+                           max_iter=100, tol=1e-2, log_io=stdout, log_interval=10,
+                           max_restarts=10, increase_factor=2.0)
+    # Cálculo das cotas iniciais (baseado no ponto inicial)
+    m, n = size(X)
+    W = copy(W_init)
+    H = copy(H_init)
+
+    min_row_H0 = minimum([norm(H[a,:]) for a in 1:r])
+    min_col_W0 = minimum([norm(W[:,a]) for a in 1:r])
+    if min_row_H0 == 0.0
+        min_row_H0 = 1.0
+    end
+    if min_col_W0 == 0.0
+        min_col_W0 = 1.0
+    end
+    W_max = (sqrt(n) * norm(X, Inf)) / min_row_H0
+    H_max = (sqrt(m) * norm(X, Inf)) / min_col_W0
+    if !isfinite(W_max) || W_max < norm(X)/r
+        W_max = norm(X) / r
+    end
+    if !isfinite(H_max) || H_max < norm(X)/r
+        H_max = norm(X) / r
+    end
+
+    # Loop de adaptação
+    total_restarts = 0          # contador de reinícios efetivos
+    final_hit_W = 0
+    final_hit_H = 0
+    final_W = nothing
+    final_H = nothing
+    final_errors = nothing
+    final_time = 0.0
+    final_iters = 0
+
+    for restart in 0:max_restarts
+        if restart > 0
+            println(log_io, "")
+            println(log_io, ">>> COTA ATIVADA (restart #$restart): aumentando W_max e H_max por fator $increase_factor")
+            println(log_io, ">>> Reiniciando algoritmo a partir do ponto atual...")
+            W_max *= increase_factor
+            H_max *= increase_factor
+            total_restarts = restart    # atualiza contador
+        end
+        
+        W, H, errors, t, iters, hit_W, hit_H = _run_nmf_lin_fixed_cotas(
+            X, r, W, H, W_max, H_max;
+            max_iter=max_iter, tol=tol,
+            log_io=log_io, log_interval=log_interval
+        )
+        
+        final_W = W
+        final_H = H
+        final_errors = errors
+        final_time += t
+        final_iters += iters
+        final_hit_W = hit_W
+        final_hit_H = hit_H
+        
+        if hit_W == 0 && hit_H == 0
+            println(log_io, "Nenhuma cota ativada. Convergência final alcançada após $total_restarts reinício(s).")
+            break
+        elseif restart == max_restarts
+            println(log_io, "ATENÇÃO: Número máximo de reinícios ($max_restarts) atingido. Ainda há cotas ativadas (W hit=$hit_W, H hit=$hit_H).")
+            break
+        end
+    end
+    
+    # Log adicional com o total de reinícios (já incluso nas mensagens, mas pode repetir)
+    println(log_io, "Total de reinícios executados: $total_restarts")
+    
+    return final_W, final_H, final_errors, final_time, final_iters, final_hit_W, final_hit_H, total_restarts
 end
