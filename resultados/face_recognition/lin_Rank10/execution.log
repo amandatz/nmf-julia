@@ -1,19 +1,19 @@
-[2026-05-03 12:04:32] SESSION_START: Face Recognition Experiment
-[2026-05-03 12:04:32] SETUP: Model=lin | Rank=10 | MaxIter=500
-[2026-05-03 12:04:32] STATUS: Starting Training Loop...
+[2026-05-03 12:07:39] SESSION_START: Face Recognition Experiment
+[2026-05-03 12:07:39] SETUP: Model=lin | Rank=10 | MaxIter=500
+[2026-05-03 12:07:39] STATUS: Starting Training Loop...
 
-[12:04:32] [LIN_ALGO] Starting Optimization (MaxIter=500, Tol=0.0001)
-[12:04:32] [LIN_ALGO] W_max = 81.92222524258781, H_max = 81.92222524258781
-[12:04:32] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
+[12:07:39] [LIN_ALGO] Starting Optimization (MaxIter=500, Tol=0.0001)
+[12:07:39] [LIN_ALGO] W_max = 81.92222524258781, H_max = 81.92222524258781
+[12:07:39] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
 -------------------------------------------------------------------------------------
-[12:04:32] [LIN_ALGO] 0001 | 2.612967e-01 | 8.7838e-01 | 9.0765e-01 |   0.22
-[12:04:34] [LIN_ALGO] 0010 | 2.092678e-01 | 1.4255e-02 | 1.4324e-02 |   1.38
-[12:04:34] [LIN_ALGO] 0015 | 2.086204e-01 | 0.0000e+00 | 0.0000e+00 |   1.60
-[12:04:34] [LIN_ALGO] STOPPED at Iter 15: Converged (Delta < 0.0001)
+[12:07:39] [LIN_ALGO] 0001 | 2.612967e-01 | 8.7838e-01 | 9.0765e-01 |   0.17
+[12:07:41] [LIN_ALGO] 0010 | 2.092678e-01 | 1.4255e-02 | 1.4324e-02 |   1.47
+[12:07:41] [LIN_ALGO] 0015 | 2.086204e-01 | 0.0000e+00 | 0.0000e+00 |   1.60
+[12:07:41] [LIN_ALGO] STOPPED at Iter 15: Converged (Delta < 0.0001)
 -------------------------------------------------------------------------------------
 
-[2026-05-03 12:04:34] STATUS: Training Finished. Time=1.6s
-[2026-05-03 12:04:34] STATUS: Projecting Test Data and Classifying...
+[2026-05-03 12:07:41] STATUS: Training Finished. Time=1.603s
+[2026-05-03 12:07:41] STATUS: Projecting Test Data and Classifying...
 
 === CLASSIFICATION REPORT ===
 IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
@@ -139,5 +139,5 @@ IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 119 |   40    |   40    |  0.3370  |   0274    | HIT 
 120 |   40    |   35    |  0.4779  |   0240    | MISS
 --------------------------------------------------------
-[2026-05-03 12:04:34] SUMMARY: Accuracy=90.83% (109/120)
-[2026-05-03 12:04:34] SESSION_END
+[2026-05-03 12:07:41] SUMMARY: Accuracy=90.83% (109/120)
+[2026-05-03 12:07:41] SESSION_END
