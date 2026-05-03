@@ -1,5 +1,5 @@
 # =========================================================================
-# Funções de Otimização
+# Funções de Otimização (com projeção em [0, M])
 # =========================================================================
 
 function projected_gradient_lin_W(X, H, W0, W_max; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
@@ -11,15 +11,14 @@ function projected_gradient_lin_W(X, H, W0, W_max; alpha_init = 1.0, tol = 1e-4,
     HHt = H * H'
     XHt = X * H'
 
-    # colocar dentro de 0 e W_max
-
     inner_iter = 0
     for iter = 1:max_iter
         inner_iter = iter
         G = W * HHt .- XHt
         W_old = copy(W)
 
-        W_cand = max.(W_old .- alpha .* G, 0.0)
+        # Projeção no intervalo [0, W_max] (entrada a entrada)
+        W_cand = max.(min.(W_old .- alpha .* G, W_max), 0.0)
         d = W_cand .- W_old
         normd = norm(d)
         
@@ -33,7 +32,7 @@ function projected_gradient_lin_W(X, H, W0, W_max; alpha_init = 1.0, tol = 1e-4,
             while suff_decr
                 W = copy(W_cand)
                 alpha /= beta
-                W_cand = max.(W_old .- alpha .* G, 0.0)
+                W_cand = max.(min.(W_old .- alpha .* G, W_max), 0.0)
                 if norm(W - W_cand) <= tol 
                     break
                 end
@@ -45,7 +44,7 @@ function projected_gradient_lin_W(X, H, W0, W_max; alpha_init = 1.0, tol = 1e-4,
         else
             while !suff_decr
                 alpha *= beta
-                W_cand = max.(W_old .- alpha .* G, 0.0)
+                W_cand = max.(min.(W_old .- alpha .* G, W_max), 0.0)
                 d = W_cand .- W_old
                 suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, d*HHt) <= 0
                 if alpha < 1e-10; break; end
@@ -69,15 +68,14 @@ function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4,
     WtW = W' * W
     WtX = W' * X
 
-    # colocar dentro de 0 e H_max
-
     inner_iter = 0
     for iter = 1:max_iter
         inner_iter = iter
         G = WtW * H .- WtX
         H_old = copy(H)
 
-        H_cand = max.(H_old .- alpha .* G, 0.0)
+        # Projeção no intervalo [0, H_max]
+        H_cand = max.(min.(H_old .- alpha .* G, H_max), 0.0)
         d = H_cand .- H_old
         normd = norm(d)
         
@@ -91,7 +89,7 @@ function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4,
             while suff_decr
                 H = copy(H_cand)
                 alpha /= beta
-                H_cand = max.(H_old .- alpha .* G, 0.0)
+                H_cand = max.(min.(H_old .- alpha .* G, H_max), 0.0)
                 if norm(H - H_cand) <= tol 
                     break
                 end
@@ -103,7 +101,7 @@ function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4,
         else
             while !suff_decr
                 alpha *= beta
-                H_cand = max.(H_old .- alpha .* G, 0.0)
+                H_cand = max.(min.(H_old .- alpha .* G, H_max), 0.0)
                 d = H_cand .- H_old
                 suff_decr = (1-sigma)*dot(G, d) + 0.5*dot(d, WtW*d) <= 0
                 if alpha < 1e-10; break; end
@@ -119,7 +117,7 @@ function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4,
 end
 
 # =========================================================================
-# Algoritmo Principal
+# Algoritmo Principal (com cálculo das cotas baseado nas normas iniciais)
 # =========================================================================
 
 function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
@@ -135,28 +133,37 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
     alpha_W = 1.0
     alpha_H = 1.0
 
-    W_max = norm(X) / r
+    # --- Definição das cotas superiores (Seção 3.2) ---
+    # Calcula min_a ||h_{a·}^0||_2 e min_a ||w_{·a}^0||_2
+    min_row_H0 = minimum([norm(H[a,:]) for a in 1:r])
+    min_col_W0 = minimum([norm(W[:,a]) for a in 1:r])
+    # Evita divisão por zero (inicializações positivas garantem >0)
+    if min_row_H0 == 0.0
+        min_row_H0 = 1.0
+    end
+    if min_col_W0 == 0.0
+        min_col_W0 = 1.0
+    end
+    # Cotas teóricas
+    W_max = (sqrt(n) * norm(X, Inf)) / min_row_H0
+    H_max = (sqrt(m) * norm(X, Inf)) / min_col_W0
+    # Fallback para evitar valores não finitos ou muito pequenos
+    if !isfinite(W_max) || W_max < norm(X)/r
+        W_max = norm(X) / r
+    end
+    if !isfinite(H_max) || H_max < norm(X)/r
+        H_max = norm(X) / r
+    end
 
-    # # normalização inicial para satisfazer W <= W_max
-    # for a in 1:r
-    #     excess = maximum(W[:, a]) / W_max
-    #     if excess > 1.0
-    #         W[:, a] ./= excess
-    #         H[a, :] .*= excess
-    #     end
-    # end
-    
     t_now = Dates.format(now(), "HH:MM:SS")
     println(log_io, "") 
     println(log_io, "[$t_now] [LIN_ALGO] Starting Optimization (MaxIter=$max_iter, Tol=$tol)")
+    println(log_io, "[$t_now] [LIN_ALGO] W_max = $W_max, H_max = $H_max")
     println(log_io, "[$t_now] [LIN_ALGO] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)")
     println(log_io, "-------------------------------------------------------------------------------------")
 
     final_iter = 0
     stop_reason = "Max Iterations Reached"
-
-    W_max = 
-    H_max = 
 
     for iter = 1:max_iter
         final_iter = iter 
@@ -165,17 +172,6 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
 
         W, iter_W, alpha_W = projected_gradient_lin_W(X, H, W, W_max; alpha_init=alpha_W, tol=sub_tol, max_iter=sub_max_iter)
         total_sub_iters += iter_W
-
-        # # transfere excesso de W para H, preservando WH
-        # for a in 1:r
-        #     excess = maximum(W[:, a]) / W_max
-        #     if excess > 1.0
-        #         W[:, a] ./= excess
-        #         H[a, :] .*= excess
-        #     end
-        # end
-
-        H_old = copy(H)  # salva depois da transferência
 
         H, iter_H, alpha_H = projected_gradient_lin_H(X, W, H, H_max; alpha_init=alpha_H, tol=sub_tol, max_iter=sub_max_iter)
         total_sub_iters += iter_H
@@ -186,7 +182,7 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
         deltaW = norm(W - W_old) / max(1.0, norm(W_old))
         deltaH = norm(H - H_old) / max(1.0, norm(H_old))
 
-        # --- Lógica de Parada ---
+        # Lógica de Parada
         should_stop = false
         if current_error < tol
             stop_reason = "Converged (Error < $tol)"
@@ -196,7 +192,7 @@ function nmf_lin_algorithm(X, r, W_init, H_init; max_iter=100, tol=1e-2, log_io=
             should_stop = true
         end
 
-        # --- LOGGING ---
+        # Logging
         if iter == 1 || iter % log_interval == 0 || should_stop
              t_now_iter = Dates.format(now(), "HH:MM:SS")
              elapsed = time() - t_start

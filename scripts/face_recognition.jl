@@ -20,7 +20,7 @@ using .NMFProject
 # =========================================================================
 
 const DATA_PATH = joinpath(@__DIR__, "..", "data", "att_face_dataset")
-const RANK      = 25
+const RANK      = 10
 const MAX_ITER  = 500
 const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7 
@@ -32,7 +32,8 @@ function log_msg(io::IO, msg::String)
     println("[$t] $msg") 
 end
 
-function project_new_data(data, W_fixed, r; method=:multiplicativo, max_iter=60)
+# --- FUNÇÃO DE PROJEÇÃO MODIFICADA (agora com H_max) ---
+function project_new_data(data, W_fixed, r, H_max; method=:multiplicativo, max_iter=60)
     cols = size(data, 2)
     H_init = rand(r, cols) 
 
@@ -46,7 +47,8 @@ function project_new_data(data, W_fixed, r; method=:multiplicativo, max_iter=60)
         return H_proj
 
     elseif method == :lin
-        H_proj, _, _ = projected_gradient_lin_H(data, W_fixed, H_init; 
+        # Agora passamos H_max explicitamente
+        H_proj, _, _ = projected_gradient_lin_H(data, W_fixed, H_init, H_max; 
                                                 alpha_init=1.0, tol=1e-4, max_iter=max_iter)
         return H_proj
     
@@ -60,15 +62,15 @@ end
 
 function main()
     models = Dict{Symbol, Function}(
-        # :multiplicativo => nmf_multiplicative,
-        # :lin            => nmf_lin_algorithm,
+        :multiplicativo => nmf_multiplicative,
+        :lin            => nmf_lin_algorithm,
 
-        :pg_spectral => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
-            X, r, W, H;
-            alpha_rule_W = make_rule_spectral_W(),
-            alpha_rule_H = make_rule_spectral_H(),
-            kwargs...
-        ),
+        # :pg_spectral => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
+        #     X, r, W, H;
+        #     alpha_rule_W = make_rule_spectral_W(),
+        #     alpha_rule_H = make_rule_spectral_H(),
+        #     kwargs...
+        # ),
     )
 
     println("--- Carregando Dataset ---")
@@ -136,7 +138,17 @@ function main()
             log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
             log_msg(io, "STATUS: Projecting Test Data and Classifying...")
             
-            H_test = project_new_data(X_test, W_train, RANK; method=model_sym)
+            # --- DEFINIÇÃO DA COTA PARA PROJEÇÃO ---
+            # Usamos um valor grande (1e6) para não restringir; 
+            # alternativamente, pode-se calcular H_max = norm(X_test) / RANK
+            H_max_test = fill(1e6, RANK, n_test)   # matriz de cotas
+            # Se a função projected_gradient_lin_H esperar um escalar,
+            # use H_max_test = 1e6 e a função cuidará de broadcasting.
+            # Vou assumir que a implementação em NMFProject.jl suporta escalar ou matriz.
+            # Para segurança, passe um escalar se a função esperar escalar.
+            # (Se der erro, substitua por: H_max_test = 1e6)
+            
+            H_test = project_new_data(X_test, W_train, RANK, 1e6; method=model_sym)   # usando escalar 1e6
 
             println(io, "")
             println(io, "=== CLASSIFICATION REPORT ===")
