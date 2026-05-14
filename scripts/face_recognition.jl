@@ -20,7 +20,7 @@ using .NMFProject
 # =========================================================================
 
 const DATA_PATH = joinpath(@__DIR__, "..", "data", "att_face_dataset")
-const RANK      = 10
+const RANK      = 40
 const MAX_ITER  = 500
 const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7 
@@ -138,16 +138,8 @@ function main()
             log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
             log_msg(io, "STATUS: Projecting Test Data and Classifying...")
             
-            # --- DEFINIÇÃO DA COTA PARA PROJEÇÃO ---
-            # Usamos um valor grande (1e6) para não restringir; 
-            # alternativamente, pode-se calcular H_max = norm(X_test) / RANK
             H_max_test = fill(1e6, RANK, n_test)   # matriz de cotas
-            # Se a função projected_gradient_lin_H esperar um escalar,
-            # use H_max_test = 1e6 e a função cuidará de broadcasting.
-            # Vou assumir que a implementação em NMFProject.jl suporta escalar ou matriz.
-            # Para segurança, passe um escalar se a função esperar escalar.
-            # (Se der erro, substitua por: H_max_test = 1e6)
-            
+
             H_test = project_new_data(X_test, W_train, RANK, 1e6; method=model_sym)   # usando escalar 1e6
 
             println(io, "")

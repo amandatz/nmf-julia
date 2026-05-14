@@ -202,16 +202,9 @@ function nmf_lin_algorithm(X, r, W_init, H_init;
     W = copy(W_init)
     H = copy(H_init)
 
-    min_row_H0 = minimum([norm(H[a,:]) for a in 1:r])
-    min_col_W0 = minimum([norm(W[:,a]) for a in 1:r])
-    if min_row_H0 == 0.0
-        min_row_H0 = 1.0
-    end
-    if min_col_W0 == 0.0
-        min_col_W0 = 1.0
-    end
-    W_max = (sqrt(n) * norm(X, Inf)) / min_row_H0
-    H_max = (sqrt(m) * norm(X, Inf)) / min_col_W0
+    W_max = (sqrt(n) * norm(X, Inf)) / 1e6
+    H_max = (sqrt(m) * norm(X, Inf)) / 1e6
+    
     if !isfinite(W_max) || W_max < norm(X)/r
         W_max = norm(X) / r
     end
