@@ -20,7 +20,7 @@ using .NMFProject
 # =========================================================================
 
 const DATA_PATH = joinpath(@__DIR__, "..", "data", "att_face_dataset")
-const RANK      = 40
+const RANK      = 5
 const MAX_ITER  = 500
 const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7 

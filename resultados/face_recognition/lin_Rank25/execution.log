@@ -1,19 +1,19 @@
-[2026-05-14 13:06:24] SESSION_START: Face Recognition Experiment
-[2026-05-14 13:06:24] SETUP: Model=lin | Rank=25 | MaxIter=500
-[2026-05-14 13:06:24] STATUS: Starting Training Loop...
+[2026-05-16 06:30:25] SESSION_START: Face Recognition Experiment
+[2026-05-16 06:30:25] SETUP: Model=lin | Rank=25 | MaxIter=500
+[2026-05-16 06:30:25] STATUS: Starting Training Loop...
 
-[13:06:24] [LIN_FIXED] Starting Optimization (MaxIter=500, Tol=0.0001)
-[13:06:24] [LIN_FIXED] W_max = 32.768890097035126, H_max = 32.768890097035126
-[13:06:24] [LIN_FIXED] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
+[06:30:25] [LIN_FIXED] Starting Optimization (MaxIter=500, Tol=0.0001)
+[06:30:25] [LIN_FIXED] W_max = 32.768890097035126, H_max = 32.768890097035126
+[06:30:25] [LIN_FIXED] ITER |  RECON_ERROR  |   DELTA_W   |   DELTA_H   | TIME(s)
 -------------------------------------------------------------------------------------
-[13:06:26] [LIN_FIXED] 0001 | 2.339389e-01 | 9.4933e-01 | 7.0356e-01 |   1.77
-[13:06:33] [LIN_FIXED] STOPPED at Iter 10: Converged (Delta < 0.0001)
+[06:30:27] [LIN_FIXED] 0001 | 2.339389e-01 | 9.4933e-01 | 7.0356e-01 |   1.41
+[06:30:31] [LIN_FIXED] STOPPED at Iter 10: Converged (Delta < 0.0001)
 -------------------------------------------------------------------------------------
 Nenhuma cota ativada. Convergência final alcançada após 0 reinício(s).
 Total de reinícios executados: 0
 
-[2026-05-14 13:06:33] STATUS: Training Finished. Time=8.259s
-[2026-05-14 13:06:33] STATUS: Projecting Test Data and Classifying...
+[2026-05-16 06:30:31] STATUS: Training Finished. Time=5.828s
+[2026-05-16 06:30:31] STATUS: Projecting Test Data and Classifying...
 
 === CLASSIFICATION REPORT ===
 IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
@@ -139,5 +139,5 @@ IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS
 119 |   40    |   40    |  1.1428  |   0274    | HIT 
 120 |   40    |   05    |  1.6218  |   0030    | MISS
 --------------------------------------------------------
-[2026-05-14 13:06:33] SUMMARY: Accuracy=90.0% (108/120)
-[2026-05-14 13:06:33] SESSION_END
+[2026-05-16 06:30:31] SUMMARY: Accuracy=90.0% (108/120)
+[2026-05-16 06:30:31] SESSION_END
