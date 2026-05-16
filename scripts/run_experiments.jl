@@ -69,7 +69,7 @@ function main()
                     stats_err   = Dict(k => Float64[] for k in keys(models))
                     stats_time  = Dict(k => Float64[] for k in keys(models))
                     stats_iter  = Dict(k => Int[]   for k in keys(models))
-                    stats_restarts = Dict(k => Int[] for k in keys(models))   # NOVO
+                    stats_restarts = Dict(k => Int[] for k in keys(models))
                     stop_reason_counts = Dict(k => Dict("converged" => 0, "max_iter" => 0) for k in keys(models))
                     
                     # Para contagem de hits (apenas relevante para :lin)
@@ -84,7 +84,6 @@ function main()
 
                         for (name, model_func) in models
                             if name == :lin
-                                # Retorna 8 valores (incluindo restarts)
                                 W, H, errs, t, iters, hit_W, hit_H, restarts = model_func(
                                     X, r_val,
                                     copy(W_init), copy(H_init);
@@ -95,14 +94,13 @@ function main()
                                 push!(hit_H_trials[name], hit_H)
                                 push!(stats_restarts[name], restarts)
                             else
-                                # Retorna 5 valores (multiplicativo)
                                 W, H, errs, t, iters = model_func(
                                     X, r_val,
                                     copy(W_init), copy(H_init);
                                     max_iter=1000, tol=1e-3,
                                     log_io=IOBuffer()
                                 )
-                                # Para multiplicativo, não há reinícios → 0
+
                                 push!(stats_restarts[name], 0)
                             end
 
@@ -119,9 +117,8 @@ function main()
                         end
                         print(".")
                     end
-                    println()  # nova linha após pontos
+                    println()
 
-                    # Calcular percentuais de hits para :lin
                     hit_W_percent = Dict(k => 0.0 for k in keys(models))
                     hit_H_percent = Dict(k => 0.0 for k in keys(models))
                     for name in keys(models)
@@ -135,7 +132,7 @@ function main()
                     restart_mean = Dict(k => mean(stats_restarts[k]) for k in keys(models))
                     restart_std  = Dict(k => (length(stats_restarts[k]) > 1 ? std(stats_restarts[k]) : 0.0) for k in keys(models))
 
-                    # Cabeçalho da tabela (nova coluna: REINÍCIOS)
+                    # Cabeçalho da tabela
                     println(io, "ALGORITMO | ERRO MÉDIO ± IC95% | TEMPO MÉDIO ± IC95% | ITER MÉDIA | CONV. % | Wmax hit % | Hmax hit % | REINÍCIOS")
                     println(io, "-"^80)
 
@@ -155,7 +152,6 @@ function main()
 
                         conv_percent = 100 * stop_reason_counts[name]["converged"] / num_trials
 
-                        # Formatação da coluna reinícios: média ± desvio (ou só média se desvio = 0)
                         restart_str = if restart_std[name] == 0.0
                             @sprintf("%.1f", restart_mean[name])
                         else
@@ -176,7 +172,7 @@ function main()
                         log_msg(io, line)
                     end
 
-                    # Teste t pareado (se houver mais de um modelo)
+                    # Teste t pareado
                     if length(models) >= 2
                         println(io, "\nTeste t pareado (diferenças de erro):")
                         names = collect(keys(models))

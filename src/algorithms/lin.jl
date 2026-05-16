@@ -117,7 +117,7 @@ function projected_gradient_lin_H(X, W, H0, H_max; alpha_init = 1.0, tol = 1e-4,
 end
 
 # =========================================================================
-# Execução interna (com cotas fixas)
+# Execução interna
 # =========================================================================
 
 function _run_nmf_lin_fixed_cotas(X, r, W_init, H_init, W_max, H_max; 
@@ -191,13 +191,13 @@ function _run_nmf_lin_fixed_cotas(X, r, W_init, H_init, W_max, H_max;
 end
 
 # =========================================================================
-# Algoritmo Principal com adaptação de cotas (aumento e reinício)
+# Algoritmo Principal
 # =========================================================================
 
 function nmf_lin_algorithm(X, r, W_init, H_init; 
                            max_iter=100, tol=1e-2, log_io=stdout, log_interval=10,
                            max_restarts=10, increase_factor=2.0)
-    # Cálculo das cotas iniciais (baseado no ponto inicial)
+
     m, n = size(X)
     W = copy(W_init)
     H = copy(H_init)
@@ -255,7 +255,6 @@ function nmf_lin_algorithm(X, r, W_init, H_init;
         end
     end
     
-    # Log adicional com o total de reinícios (já incluso nas mensagens, mas pode repetir)
     println(log_io, "Total de reinícios executados: $total_restarts")
     
     return final_W, final_H, final_errors, final_time, final_iters, final_hit_W, final_hit_H, total_restarts

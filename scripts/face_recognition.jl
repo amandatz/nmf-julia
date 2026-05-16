@@ -32,7 +32,6 @@ function log_msg(io::IO, msg::String)
     println("[$t] $msg") 
 end
 
-# --- FUNÇÃO DE PROJEÇÃO MODIFICADA (agora com H_max) ---
 function project_new_data(data, W_fixed, r, H_max; method=:multiplicativo, max_iter=60)
     cols = size(data, 2)
     H_init = rand(r, cols) 
@@ -47,7 +46,6 @@ function project_new_data(data, W_fixed, r, H_max; method=:multiplicativo, max_i
         return H_proj
 
     elseif method == :lin
-        # Agora passamos H_max explicitamente
         H_proj, _, _ = projected_gradient_lin_H(data, W_fixed, H_init, H_max; 
                                                 alpha_init=1.0, tol=1e-4, max_iter=max_iter)
         return H_proj
@@ -64,13 +62,6 @@ function main()
     models = Dict{Symbol, Function}(
         :multiplicativo => nmf_multiplicative,
         :lin            => nmf_lin_algorithm,
-
-        # :pg_spectral => (X, r, W, H; kwargs...) -> nmf_gradient_projected(
-        #     X, r, W, H;
-        #     alpha_rule_W = make_rule_spectral_W(),
-        #     alpha_rule_H = make_rule_spectral_H(),
-        #     kwargs...
-        # ),
     )
 
     println("--- Carregando Dataset ---")
@@ -138,9 +129,9 @@ function main()
             log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
             log_msg(io, "STATUS: Projecting Test Data and Classifying...")
             
-            H_max_test = fill(1e6, RANK, n_test)   # matriz de cotas
+            H_max_test = fill(1e6, RANK, n_test) 
 
-            H_test = project_new_data(X_test, W_train, RANK, 1e6; method=model_sym)   # usando escalar 1e6
+            H_test = project_new_data(X_test, W_train, RANK, 1e6; method=model_sym)  
 
             println(io, "")
             println(io, "=== CLASSIFICATION REPORT ===")
