@@ -66,10 +66,11 @@ function main()
                     log_msg(io, ">>> matriz=$type_val | dimensão=$dim x $dim | rank=$r_val")
 
                     # Armazenar resultados por algoritmo
-                    stats_err   = Dict(k => Float64[] for k in keys(models))
-                    stats_time  = Dict(k => Float64[] for k in keys(models))
-                    stats_iter  = Dict(k => Int[]   for k in keys(models))
-                    stats_restarts = Dict(k => Int[] for k in keys(models))
+                    stats_err      = Dict(k => Float64[] for k in keys(models))
+                    stats_time     = Dict(k => Float64[] for k in keys(models))
+                    stats_ext_iter = Dict(k => Int[]     for k in keys(models))
+                    stats_int_iter = Dict(k => Int[]     for k in keys(models))
+                    stats_restarts = Dict(k => Int[]     for k in keys(models))
                     stop_reason_counts = Dict(k => Dict("converged" => 0, "max_iter" => 0) for k in keys(models))
                     
                     # Para contagem de hits (apenas relevante para :lin)
@@ -79,17 +80,21 @@ function main()
                     for trial in 1:num_trials
                         X = generate_matrix(dim, dim; type=type_val)
                         m, n = size(X)
-                        W_init = rand(m, r_val)
-                        H_init = rand(r_val, n)
+                        
+                        delta = 1e-9;
+                        W_init = delta .+ (1-delta) .* rand(m, r_val)
+                        H_init = delta .+ (1-delta) .* rand(r_val, n)
 
                         for (name, model_func) in models
                             if name == :lin
-                                W, H, errs, t, iters, hit_W, hit_H, restarts = model_func(
+                                W, H, errs, t, ext_iters, int_iters, hit_W, hit_H, restarts = model_func(
                                     X, r_val,
                                     copy(W_init), copy(H_init);
                                     max_iter=1000, tol=1e-3,
                                     log_io=IOBuffer()
                                 )
+                                push!(stats_ext_iter[name], ext_iters)
+                                push!(stats_int_iter[name], int_iters)
                                 push!(hit_W_trials[name], hit_W)
                                 push!(hit_H_trials[name], hit_H)
                                 push!(stats_restarts[name], restarts)
@@ -100,14 +105,14 @@ function main()
                                     max_iter=1000, tol=1e-3,
                                     log_io=IOBuffer()
                                 )
-
+                                push!(stats_ext_iter[name], iters)
+                                push!(stats_int_iter[name], 0)   # multiplicativo não tem internas
                                 push!(stats_restarts[name], 0)
                             end
 
                             err = relative_error(X, W, H)
                             push!(stats_err[name], err)
                             push!(stats_time[name], t)
-                            push!(stats_iter[name], iters)
 
                             if length(errs) >= 1000
                                 stop_reason_counts[name]["max_iter"] += 1
@@ -133,13 +138,14 @@ function main()
                     restart_std  = Dict(k => (length(stats_restarts[k]) > 1 ? std(stats_restarts[k]) : 0.0) for k in keys(models))
 
                     # Cabeçalho da tabela
-                    println(io, "ALGORITMO | ERRO MÉDIO ± IC95% | TEMPO MÉDIO ± IC95% | ITER MÉDIA | CONV. % | Wmax hit % | Hmax hit % | REINÍCIOS")
-                    println(io, "-"^80)
+                    println(io, "ALGORITMO | ERRO MÉDIO ± IC95% | TEMPO MÉDIO ± IC95% | ITER EXT | ITER INT | CONV. % | Wmax hit % | Hmax hit % | REINÍCIOS")
+                    println(io, "-"^130)
 
                     for name in sort(collect(keys(models)))
-                        err_data = stats_err[name]
-                        time_data = stats_time[name]
-                        iter_data = stats_iter[name]
+                        err_data      = stats_err[name]
+                        time_data     = stats_time[name]
+                        ext_iter_data = stats_ext_iter[name]
+                        int_iter_data = stats_int_iter[name]
 
                         err_mean = mean(err_data)
                         err_std  = std(err_data)
@@ -148,7 +154,8 @@ function main()
                         time_mean = mean(time_data)
                         time_std  = std(time_data)
                         time_ci = t_val * time_std / sqrt(length(time_data))
-                        iter_mean = mean(iter_data)
+                        ext_iter_mean = mean(ext_iter_data)
+                        int_iter_mean = mean(int_iter_data)
 
                         conv_percent = 100 * stop_reason_counts[name]["converged"] / num_trials
 
@@ -159,11 +166,12 @@ function main()
                         end
 
                         line = @sprintf(
-                            "%-15s | %.3e ± %.3e | %.3fs ± %.3f | %.1f | %5.1f%% | %9.1f%% | %9.1f%% | %s",
+                            "%-15s | %.3e ± %.3e | %.3fs ± %.3f | %8.1f | %8.1f | %5.1f%% | %9.1f%% | %9.1f%% | %s",
                             string(name),
                             err_mean, err_ci,
                             time_mean, time_ci,
-                            iter_mean,
+                            ext_iter_mean,
+                            int_iter_mean,
                             conv_percent,
                             hit_W_percent[name],
                             hit_H_percent[name],
@@ -187,7 +195,7 @@ function main()
                         end
                     end
 
-                    println(io, "-"^80)
+                    println(io, "-"^130)
                 end
             end
         end

@@ -1,3 +1,34 @@
+function multiplicative_H_projection(
+    X,
+    W,
+    H0;
+    max_iter = 60,
+    tol = 1e-4
+)
+    H = copy(H0)
+    iters = 0
+
+    WtX = W' * X
+    WtW = W' * W
+
+    for iter = 1:max_iter
+        iters = iter
+
+        H_old = copy(H)
+
+        denominator = (WtW * H) .+ 1e-9
+        H .= H .* (WtX ./ denominator)
+
+        deltaH = norm(H - H_old) / max(1.0, norm(H_old))
+
+        if deltaH < tol
+            break
+        end
+    end
+
+    return H, iters
+end
+
 function nmf_multiplicative(
     X, r, W_init, H_init;
     max_iter = 200,

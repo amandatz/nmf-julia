@@ -20,7 +20,7 @@ using .NMFProject
 # =========================================================================
 
 const DATA_PATH = joinpath(@__DIR__, "..", "data", "att_face_dataset")
-const RANK      = 5
+const RANKS     = [5, 10, 25, 40]
 const MAX_ITER  = 500
 const TOL       = 1e-4
 const NUM_TRAIN_PER_PERSON = 7 
@@ -32,28 +32,27 @@ function log_msg(io::IO, msg::String)
     println("[$t] $msg") 
 end
 
+function rand_pos(dims...; delta=1e-9)
+    return delta .+ (1 - delta) .* rand(dims...)
+end
+
 function project_new_data(data, W_fixed, r, H_max; method=:multiplicativo, max_iter=60)
     cols = size(data, 2)
-    H_init = rand(r, cols) 
+    H_init = rand_pos(r, cols) 
 
     if method == :multiplicativo
-        H_proj = copy(H_init)
-        WtV = W_fixed' * data
-        WtW = W_fixed' * W_fixed
-        for i in 1:max_iter
-            H_proj .= H_proj .* (WtV ./ (WtW * H_proj .+ 1e-9))
-        end
-        return H_proj
+        H_proj, _ = multiplicative_H_projection(
+            data,
+            W_fixed,
+            H_init;
+            max_iter=max_iter,
+            tol=1e-4
+        )
 
+        return H_proj
     elseif method == :lin
         H_proj, _, _ = projected_gradient_lin_H(data, W_fixed, H_init, H_max; 
                                                 alpha_init=1.0, tol=1e-4, max_iter=max_iter)
-        return H_proj
-    
-    elseif method == :pg_spectral
-        H_proj, _, _ = projected_gradient_H(data, W_fixed, H_init;
-                                            alpha_init=1e-3, tol=1e-4, max_iter=max_iter,
-                                            alpha_rule_H=make_rule_spectral_H())
         return H_proj
     end
 end
@@ -96,91 +95,103 @@ function main()
     # =========================================================================
     # Loop de Execução
     # =========================================================================
-    
-    Random.seed!(1234)
-    W_init_common = rand(m, RANK)
-    H_init_common = rand(RANK, n_train)
 
     results_summary = []
 
-    for (model_sym, algo_func) in models
-        model_name = string(model_sym)
-        println("\n>>> Preparando Modelo: $model_name")
+    for rank in RANKS
+        println("\n========================================")
+        println("EXECUTANDO COM RANK = $rank")
+        println("========================================")
 
-        Random.seed!(1234) # reset da seed
+        Random.seed!(1234)
+        W_init_common = rand_pos(m, rank)
+        H_init_common = rand_pos(rank, n_train)
 
-        OUTPUT_DIR = joinpath("resultados", "face_recognition", "$(model_name)_Rank$(RANK)")
-        if !isdir(OUTPUT_DIR); mkpath(OUTPUT_DIR); end
-        log_path = joinpath(OUTPUT_DIR, "execution.log")
+        for (model_sym, algo_func) in models
+            model_name = string(model_sym)
+            println("\n>>> Preparando Modelo: $model_name (rank=$rank)")
 
-        open(log_path, "w") do io
-            log_msg(io, "SESSION_START: Face Recognition Experiment")
-            log_msg(io, "SETUP: Model=$model_name | Rank=$RANK | MaxIter=$MAX_ITER")
-            log_msg(io, "STATUS: Starting Training Loop...")
-            
-            W_train, H_train, errors, t_train, iters = algo_func(
-                X_train, RANK,
-                copy(W_init_common), copy(H_init_common);
-                max_iter=MAX_ITER, tol=TOL,
-                log_io=io, log_interval=10 
-            )
+            Random.seed!(1234)
 
-            println(io, "")
-            log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
-            log_msg(io, "STATUS: Projecting Test Data and Classifying...")
-            
-            H_max_test = fill(1e6, RANK, n_test) 
+            OUTPUT_DIR = joinpath("resultados", "face_recognition", "$(model_name)_Rank$(rank)")
+            if !isdir(OUTPUT_DIR); mkpath(OUTPUT_DIR); end
+            log_path = joinpath(OUTPUT_DIR, "execution.log")
 
-            H_test = project_new_data(X_test, W_train, RANK, 1e6; method=model_sym)  
-
-            println(io, "")
-            println(io, "=== CLASSIFICATION REPORT ===")
-            println(io, "IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS")
-            println(io, "--------------------------------------------------------")
-
-            acertos = 0
-            for i in 1:n_test
-                h_unk = H_test[:, i]
-                real_id = test_labels[i]
+            open(log_path, "w") do io
+                log_msg(io, "SESSION_START: Face Recognition Experiment")
+                log_msg(io, "SETUP: Model=$model_name | Rank=$rank | MaxIter=$MAX_ITER")
+                log_msg(io, "STATUS: Starting Training Loop...")
                 
-                min_dist = Inf
-                predicted_id = -1
-                match_idx = -1
-                for j in 1:n_train
-                    dist = norm(h_unk - H_train[:, j])
-                    if dist < min_dist
-                        min_dist = dist
-                        predicted_id = train_labels[j]
-                        match_idx = j
+                W_train, H_train, errors, t_train, iters = algo_func(
+                    X_train, rank,
+                    copy(W_init_common), copy(H_init_common);
+                    max_iter=MAX_ITER, tol=TOL,
+                    log_io=io, log_interval=10 
+                )
+
+                println(io, "")
+                log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
+                log_msg(io, "STATUS: Projecting Test Data and Classifying...")
+
+                H_test = project_new_data(X_test, W_train, rank, 1e6; method=model_sym)  
+
+                println(io, "")
+                println(io, "=== CLASSIFICATION REPORT ===")
+                println(io, "IDX | REAL_ID | PRED_ID | DISTANCE | MATCH_IDX | STATUS")
+                println(io, "--------------------------------------------------------")
+
+                acertos = 0
+                for i in 1:n_test
+                    h_unk = H_test[:, i]
+                    real_id = test_labels[i]
+                    
+                    min_dist = Inf
+                    predicted_id = -1
+                    match_idx = -1
+                    for j in 1:n_train
+                        dist = norm(h_unk - H_train[:, j])
+                        if dist < min_dist
+                            min_dist = dist
+                            predicted_id = train_labels[j]
+                            match_idx = j
+                        end
                     end
+                    
+                    is_correct = (predicted_id == real_id)
+                    if is_correct; acertos += 1; end
+                    
+                    status_str = is_correct ? "HIT " : "MISS"
+                    
+                    @printf(io, "%03d |   %02d    |   %02d    |  %.4f  |   %04d    | %s\n", 
+                            i, real_id, predicted_id, min_dist, match_idx, status_str)
                 end
+
+                acc = (acertos / n_test) * 100
                 
-                is_correct = (predicted_id == real_id)
-                if is_correct; acertos += 1; end
-                
-                status_str = is_correct ? "HIT " : "MISS"
-                
-                @printf(io, "%03d |   %02d    |   %02d    |  %.4f  |   %04d    | %s\n", 
-                        i, real_id, predicted_id, min_dist, match_idx, status_str)
+                println(io, "--------------------------------------------------------")
+                log_msg(io, "SUMMARY: Accuracy=$(round(acc, digits=2))% ($acertos/$n_test)")
+                log_msg(io, "SESSION_END")
+
+                println("   -> Modelo: $model_name (rank=$rank) | Acurácia: $(round(acc, digits=2))% | Log gerado.")
+                push!(results_summary, (model_name, rank, acc, t_train, iters))
             end
-
-            acc = (acertos / n_test) * 100
-            
-            println(io, "--------------------------------------------------------")
-            log_msg(io, "SUMMARY: Accuracy=$(round(acc, digits=2))% ($acertos/$n_test)")
-            log_msg(io, "SESSION_END")
-
-            println("   -> Modelo: $model_name | Acurácia: $(round(acc, digits=2))% | Log gerado.")
-            push!(results_summary, (model_name, acc, t_train))
         end
     end
+
+    # =========================================================================
+    # Resumo final
+    # =========================================================================
 
     println("\n========================================")
     println("RESUMO FINAL")
     println("========================================")
-    sort!(results_summary, by=x -> x[2], rev=true)
-    for (name, acc, time_s) in results_summary
-        @printf "%-25s | Acurácia: %6.2f%% | Tempo Treino: %6.2fs\n" name acc time_s
+    @printf "%-15s | %-4s | %-7s | %-10s | %-6s\n" "Modelo" "Rank" "Iter" "Tempo (s)" "Acc (%)"
+    println("-"^60)
+
+    sort!(results_summary, by=x -> (x[2], x[1]))
+
+    for (name, rank, acc, time_s, iters) in results_summary
+        @printf "%-15s | %-4d | %-7d | %-10.2f | %-6.2f\n" name rank iters time_s acc
     end
 end
 

@@ -1,5 +1,5 @@
 # =========================================================================
-# Funções de Otimização (com projeção em [0, M])
+# Funções
 # =========================================================================
 
 function projected_gradient_lin_W(X, H, W0, W_max; alpha_init = 1.0, tol = 1e-4, max_iter = 50)
@@ -121,10 +121,9 @@ end
 # =========================================================================
 
 function _run_nmf_lin_fixed_cotas(X, r, W_init, H_init, W_max, H_max; 
-                                  max_iter=100, tol=1e-2, log_io=stdout, log_interval=10)
-    sub_max_iter = 50
-    sub_tol = 1e-3
-    
+                                  max_iter=100, tol=1e-2, 
+                                  sub_tol=1e-3, sub_max_iter=50,
+                                  log_io=stdout, log_interval=10)
     m, n = size(X)
     W = copy(W_init)
     H = copy(H_init)
@@ -187,7 +186,7 @@ function _run_nmf_lin_fixed_cotas(X, r, W_init, H_init, W_max, H_max;
     println(log_io, "[$t_now_end] [LIN_FIXED] STOPPED at Iter $final_iter: $stop_reason")
     println(log_io, "-------------------------------------------------------------------------------------")
     
-    return W, H, errors, time() - t_start, total_sub_iters, hit_W, hit_H
+    return W, H, errors, time() - t_start, final_iter, total_sub_iters, hit_W, hit_H
 end
 
 # =========================================================================
@@ -195,32 +194,28 @@ end
 # =========================================================================
 
 function nmf_lin_algorithm(X, r, W_init, H_init; 
-                           max_iter=100, tol=1e-2, log_io=stdout, log_interval=10,
+                           max_iter=100, tol=1e-2, 
+                           sub_tol=1e-3, sub_max_iter=50,
+                           log_io=stdout, log_interval=10,
                            max_restarts=10, increase_factor=2.0)
 
     m, n = size(X)
     W = copy(W_init)
     H = copy(H_init)
 
-    W_max = (sqrt(n) * norm(X, Inf)) / 1e6
-    H_max = (sqrt(m) * norm(X, Inf)) / 1e6
+    W_max = (sqrt(n) * norm(X, Inf)) / 1e-6
+    H_max = (sqrt(m) * norm(X, Inf)) / 1e-6
     
-    if !isfinite(W_max) || W_max < norm(X)/r
-        W_max = norm(X) / r
-    end
-    if !isfinite(H_max) || H_max < norm(X)/r
-        H_max = norm(X) / r
-    end
-
     # Loop de adaptação
-    total_restarts = 0          # contador de reinícios efetivos
+    total_restarts = 0   
     final_hit_W = 0
     final_hit_H = 0
     final_W = nothing
     final_H = nothing
     final_errors = nothing
     final_time = 0.0
-    final_iters = 0
+    final_ext_iters = 0    
+    final_int_iters = 0     
 
     for restart in 0:max_restarts
         if restart > 0
@@ -229,12 +224,13 @@ function nmf_lin_algorithm(X, r, W_init, H_init;
             println(log_io, ">>> Reiniciando algoritmo a partir do ponto atual...")
             W_max *= increase_factor
             H_max *= increase_factor
-            total_restarts = restart    # atualiza contador
+            total_restarts = restart
         end
         
-        W, H, errors, t, iters, hit_W, hit_H = _run_nmf_lin_fixed_cotas(
+        W, H, errors, t, ext_iters, int_iters, hit_W, hit_H = _run_nmf_lin_fixed_cotas(
             X, r, W, H, W_max, H_max;
             max_iter=max_iter, tol=tol,
+            sub_tol=sub_tol, sub_max_iter=sub_max_iter,
             log_io=log_io, log_interval=log_interval
         )
         
@@ -242,7 +238,8 @@ function nmf_lin_algorithm(X, r, W_init, H_init;
         final_H = H
         final_errors = errors
         final_time += t
-        final_iters += iters
+        final_ext_iters += ext_iters
+        final_int_iters += int_iters
         final_hit_W = hit_W
         final_hit_H = hit_H
         
@@ -257,5 +254,5 @@ function nmf_lin_algorithm(X, r, W_init, H_init;
     
     println(log_io, "Total de reinícios executados: $total_restarts")
     
-    return final_W, final_H, final_errors, final_time, final_iters, final_hit_W, final_hit_H, total_restarts
+    return final_W, final_H, final_errors, final_time, final_ext_iters, final_int_iters, final_hit_W, final_hit_H, total_restarts
 end

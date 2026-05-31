@@ -30,13 +30,14 @@ function relative_error(X, W, H)
 end
 
 # =========================================================================
-# Geração de X sintético a partir de fatores conhecidos
+# Geração de X 
 # =========================================================================
 
-function generate_synthetic(m::Int, n::Int, r::Int; seed::Union{Int,Nothing}=nothing)
+function generate_synthetic(m, n, r; seed=nothing)
     rng = isnothing(seed) ? Random.default_rng() : MersenneTwister(seed)
-    W_true = rand(rng, m, r)
-    H_true = rand(rng, r, n)
+    delta = 1e-9;
+    W_true = delta .+ (1 - delta) .* rand(rng, m, r)
+    H_true = delta .+ (1 - delta) .* rand(rng, r, n)
     return W_true * H_true
 end
 
@@ -73,60 +74,67 @@ function main()
                 log_msg(io, "")
                 log_msg(io, ">>> dim=$(m)×$(n) | rank=$r")
 
-                stats_err       = Dict(k => Float64[] for k in keys(models))
-                stats_time      = Dict(k => Float64[] for k in keys(models))
-                stats_iter      = Dict(k => Int[]     for k in keys(models))
-                converged_count = Dict(k => 0         for k in keys(models))
+                stats_err      = Dict(k => Float64[] for k in keys(models))
+                stats_time     = Dict(k => Float64[] for k in keys(models))
+                stats_ext_iter = Dict(k => Int[]     for k in keys(models))
+                stats_int_iter = Dict(k => Int[]     for k in keys(models))
+                stats_restarts = Dict(k => Int[]     for k in keys(models))
 
                 for trial in 1:num_trials
                     X = generate_synthetic(m, n, r; seed=trial*1000)
 
-                    W_init = rand(m, r)
-                    H_init = rand(r, n)
+                    delta = 1e-9;
+                    W_init = delta .+ (1-delta) .* rand(m, r)
+                    H_init = delta .+ (1-delta) .* rand(r, n)
 
                     for (name, model_func) in models
                         if name == :lin
-                            W, H, errs, t, iters, _, _, _ = model_func(
+                            W, H, errs, t, ext_iters, int_iters, _, _, restarts = model_func(
                                 X, r, copy(W_init), copy(H_init);
+                                sub_tol=1e-5, sub_max_iter=200,
                                 max_iter=2000, tol=1e-6, log_io=IOBuffer()
                             )
+                            push!(stats_ext_iter[name], ext_iters)
+                            push!(stats_int_iter[name], int_iters)
+                            push!(stats_restarts[name], restarts)
                         else
                             W, H, errs, t, iters = model_func(
                                 X, r, copy(W_init), copy(H_init);
                                 max_iter=2000, tol=1e-6, log_io=IOBuffer()
                             )
+                            push!(stats_ext_iter[name], iters)
+                            push!(stats_int_iter[name], 0) 
+                            push!(stats_restarts[name], 0) 
                         end
 
                         push!(stats_err[name],  relative_error(X, W, H))
                         push!(stats_time[name], t)
-                        push!(stats_iter[name], iters)
-
-                        if length(errs) < 2000
-                            converged_count[name] += 1
-                        end
                     end
                     print(".")
                 end
                 println()
 
-                println(io, "ALGORITMO      | ERRO MÉDIO ± IC95%   | TEMPO (s) ± IC95% | ITER MÉDIA | CONV%")
-                println(io, "-"^80)
+                println(io, "ALGORITMO      | ERRO MÉDIO ± IC95%   | TEMPO (s) ± IC95% | ITER EXT | ITER INT | REINÍCIOS")
+                println(io, "-"^110)
 
                 for name in sort(collect(keys(models)))
-                    ed = stats_err[name]
-                    td = stats_time[name]
-                    id = stats_iter[name]
+                    ed  = stats_err[name]
+                    td  = stats_time[name]
+                    eid = stats_ext_iter[name]
+                    iid = stats_int_iter[name]
+                    rd  = stats_restarts[name]
 
                     t_crit = quantile(TDist(length(ed)-1), 0.975)
                     ci(v)  = t_crit * std(v) / sqrt(length(v))
 
                     line = @sprintf(
-                        "%-14s | %.3e ± %.2e | %.3fs ± %.3f | %10.1f | %5.1f%%",
+                        "%-14s | %.3e ± %.2e | %.3fs ± %.3f | %8.1f | %8.1f | %9.1f",
                         string(name),
                         mean(ed), ci(ed),
                         mean(td), ci(td),
-                        mean(id),
-                        100.0 * converged_count[name] / num_trials
+                        mean(eid),
+                        mean(iid),
+                        mean(rd)
                     )
                     log_msg(io, line)
                 end
@@ -141,7 +149,7 @@ function main()
                     end
                 end
 
-                println(io, "-"^80)
+                println(io, "-"^110)
             end
         end
 
