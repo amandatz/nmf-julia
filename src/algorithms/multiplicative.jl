@@ -101,6 +101,7 @@ function nmf_multiplicative(
     else
         println(log_io, "[$t_now] [MULT_ALGO] STOPPED: Max Iterations Reached ($max_iter)")
     end
+    @printf(log_io, "[%s] [MULT_ALGO] Final error: %.6e\n", t_now, errors[end])
     elapsed = time() - t_start
     println(log_io, "-------------------------------------------------------------------------------------")
     

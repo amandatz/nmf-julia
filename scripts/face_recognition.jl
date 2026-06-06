@@ -122,15 +122,30 @@ function main()
                 log_msg(io, "SETUP: Model=$model_name | Rank=$rank | MaxIter=$MAX_ITER")
                 log_msg(io, "STATUS: Starting Training Loop...")
                 
-                W_train, H_train, errors, t_train, iters = algo_func(
-                    X_train, rank,
-                    copy(W_init_common), copy(H_init_common);
-                    max_iter=MAX_ITER, tol=TOL,
-                    log_io=io, log_interval=10 
-                )
+                ext_iters = 0
+                int_iters = 0
+
+                if model_sym == :lin
+                    W_train, H_train, errors, t_train, ext_iters, int_iters, _, _, _ = algo_func(
+                        X_train, rank,
+                        copy(W_init_common), copy(H_init_common);
+                        max_iter=MAX_ITER, tol=TOL,
+                        log_io=io, log_interval=10 
+                    )
+                else
+                    W_train, H_train, errors, t_train, iters = algo_func(
+                        X_train, rank,
+                        copy(W_init_common), copy(H_init_common);
+                        max_iter=MAX_ITER, tol=TOL,
+                        log_io=io, log_interval=10 
+                    )
+                    ext_iters = iters
+                    int_iters = 0   # multiplicativo não tem iterações internas
+                end
 
                 println(io, "")
                 log_msg(io, "STATUS: Training Finished. Time=$(round(t_train, digits=4))s")
+                log_msg(io, "STATUS: Iterations - Ext: $ext_iters | Int: $int_iters")
                 log_msg(io, "STATUS: Projecting Test Data and Classifying...")
 
                 H_test = project_new_data(X_test, W_train, rank, 1e6; method=model_sym)  
@@ -172,8 +187,8 @@ function main()
                 log_msg(io, "SUMMARY: Accuracy=$(round(acc, digits=2))% ($acertos/$n_test)")
                 log_msg(io, "SESSION_END")
 
-                println("   -> Modelo: $model_name (rank=$rank) | Acurácia: $(round(acc, digits=2))% | Log gerado.")
-                push!(results_summary, (model_name, rank, acc, t_train, iters))
+                println("   -> Modelo: $model_name (rank=$rank) | Acurácia: $(round(acc, digits=2))% | Ext: $ext_iters | Int: $int_iters")
+                push!(results_summary, (model_name, rank, acc, t_train, ext_iters, int_iters))
             end
         end
     end
@@ -185,13 +200,13 @@ function main()
     println("\n========================================")
     println("RESUMO FINAL")
     println("========================================")
-    @printf "%-15s | %-4s | %-7s | %-10s | %-6s\n" "Modelo" "Rank" "Iter" "Tempo (s)" "Acc (%)"
-    println("-"^60)
+    @printf "%-15s | %-4s | %-9s | %-9s | %-10s | %-6s\n" "Modelo" "Rank" "Iter Ext" "Iter Int" "Tempo (s)" "Acc (%)"
+    println("-"^70)
 
     sort!(results_summary, by=x -> (x[2], x[1]))
 
-    for (name, rank, acc, time_s, iters) in results_summary
-        @printf "%-15s | %-4d | %-7d | %-10.2f | %-6.2f\n" name rank iters time_s acc
+    for (name, rank, acc, time_s, ext_iters, int_iters) in results_summary
+        @printf "%-15s | %-4d | %-9d | %-9d | %-10.2f | %-6.2f\n" name rank ext_iters int_iters time_s acc
     end
 end
 

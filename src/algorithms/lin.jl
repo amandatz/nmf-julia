@@ -184,6 +184,7 @@ function _run_nmf_lin_fixed_cotas(X, r, W_init, H_init, W_max, H_max;
     
     t_now_end = Dates.format(now(), "HH:MM:SS")
     println(log_io, "[$t_now_end] [LIN_FIXED] STOPPED at Iter $final_iter: $stop_reason")
+    @printf(log_io, "[%s] [LIN_FIXED] Final error: %.6e\n", t_now_end, errors[end])
     println(log_io, "-------------------------------------------------------------------------------------")
     
     return W, H, errors, time() - t_start, final_iter, total_sub_iters, hit_W, hit_H

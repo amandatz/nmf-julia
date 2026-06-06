@@ -180,21 +180,6 @@ function main()
                         log_msg(io, line)
                     end
 
-                    # Teste t pareado
-                    if length(models) >= 2
-                        println(io, "\nTeste t pareado (diferenças de erro):")
-                        names = collect(keys(models))
-                        for i in 1:length(names)
-                            for j in i+1:length(names)
-                                a = names[i]; b = names[j]
-                                diffs = stats_err[a] .- stats_err[b]
-                                result = OneSampleTTest(diffs, 0.0)
-                                p_val = pvalue(result)
-                                println(io, "  $a vs $b: p-valor = $(round(p_val, digits=4))")
-                            end
-                        end
-                    end
-
                     println(io, "-"^130)
                 end
             end

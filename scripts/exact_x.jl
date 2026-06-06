@@ -4,8 +4,8 @@ using Statistics
 using Printf
 using Random
 using Dates
-using Distributions
 using HypothesisTests
+using Distributions
 
 try
     using Revise
@@ -137,16 +137,6 @@ function main()
                         mean(rd)
                     )
                     log_msg(io, line)
-                end
-
-                if length(models) >= 2
-                    println(io, "\nTeste t pareado (erro de reconstrução):")
-                    names = collect(keys(models))
-                    for i in 1:length(names), j in i+1:length(names)
-                        a, b = names[i], names[j]
-                        result = OneSampleTTest(stats_err[a] .- stats_err[b], 0.0)
-                        @printf(io, "  %s vs %s: p-valor = %.4f\n", a, b, pvalue(result))
-                    end
                 end
 
                 println(io, "-"^110)

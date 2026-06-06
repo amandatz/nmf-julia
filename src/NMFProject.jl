@@ -5,6 +5,7 @@ using Random
 using Statistics
 using Printf
 using Base.Threads
+using Dates
 
 const MAX_ITER_FIXED = 10000
 const TOL_FIXED = 1e-4
