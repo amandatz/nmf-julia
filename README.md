@@ -40,8 +40,9 @@ nmf-julia/
 │   └── att_face_dataset/       # Dataset AT&T (ORL) de faces
 ├── resultados/                 # Saídas dos experimentos (figuras, métricas)
 ├── scripts/
+│   ├── exact_x.jl             # Experimentos sintéticos com X exata
 │   ├── face_recognition.jl    # Reconhecimento de faces com NMF
-│   └── run_experiments.jl     # Comparação dos algoritmos
+│   └── run_experiments.jl     # Experimentos sintéticos
 ├── src/
 │   ├── algorithms/
 │   │   ├── lin.jl             # Gradiente projetado (Lin, 2007)
@@ -75,6 +76,10 @@ Pkg.instantiate()
 include("scripts/run_experiments.jl")
 ```
 
+```julia
+include("scripts/exact_x.jl")
+```
+
 Compara os dois algoritmos em dados sintéticos.
 
 ### Reconhecimento de faces
@@ -85,22 +90,4 @@ include("scripts/face_recognition.jl")
 
 Aplica NMF ao dataset AT&T Faces e avalia o desempenho de classificação com as bases $W$ aprendidas por cada algoritmo.
 
----
-
-## Dataset
-
 O dataset utilizado é o [AT&T Database of Faces (ORL)](https://cam-orl.co.uk/facedatabase.html), composto por 400 imagens em escala de cinza de 40 indivíduos (10 imagens por indivíduo), com dimensão $92 \times 112$ pixels.
-
----
-
-## Referências
-
-- **Lee, D. D. & Seung, H. S.** (2001). Algorithms for Non-negative Matrix Factorization. *Advances in Neural Information Processing Systems*, 13.
-
-- **Lin, C.-J.** (2007). Projected Gradient Methods for Nonnegative Matrix Factorization. *Neural Computation*, 19(10), 2756–2779.
-
-- **Lin, C.-J.** (2007). On the Convergence of Multiplicative Update Algorithms for Nonnegative Matrix Factorization. *IEEE Transactions on Neural Networks*, 18(6), 1589–1596.
-
-- **Bertsekas, D. P.** (1999). *Nonlinear Programming* (2nd ed.). Athena Scientific.
-
-- **Grippo, L. & Sciandrone, M.** (2000). On the Convergence of the Block Nonlinear Gauss–Seidel Method under Convex Constraints. *Operations Research Letters*, 26(3), 127–136.
